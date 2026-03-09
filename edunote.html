@@ -2301,13 +2301,25 @@ function _startApp() {
   renderDashboard();
 }
 
-// Firebase 초기화 및 앱 시작
-(async function() {
-  load(); // localStorage 먼저 로드
+// Firebase CDN 스크립트 로드 후 초기화
+function _loadFirebase() {
+  return new Promise((resolve) => {
+    const s1 = document.createElement('script');
+    s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+    s1.onload = () => {
+      const s2 = document.createElement('script');
+      s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+      s2.onload = () => resolve();
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  });
+}
+
+load(); // localStorage 먼저 로드
+_loadFirebase().then(() => {
   try {
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const { getFirestore, doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-    const app = initializeApp({
+    const app = firebase.initializeApp({
       apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
       authDomain: "edunote-96bd7.firebaseapp.com",
       projectId: "edunote-96bd7",
@@ -2315,22 +2327,22 @@ function _startApp() {
       messagingSenderId: "769455023609",
       appId: "1:769455023609:web:48fc29f58bf069acaa0928"
     });
-    const db = getFirestore(app);
-    const REF = doc(db, 'edunote', 'main');
+    const db = firebase.firestore();
+    const REF = db.collection('edunote').doc('main');
     // 저장 함수
-    window._fbSave = async (data) => {
-      try { await setDoc(REF, { data: JSON.stringify(data) }); } catch(e) { console.error('FB save:', e); }
-    };
+    window._fbSave = (data) => REF.set({ data: JSON.stringify(data) }).catch(e => console.error('FB save:', e));
     // Firebase에서 불러오기
-    const snap = await getDoc(REF);
-    if (snap.exists()) {
-      try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e) {}
-    }
+    REF.get().then(snap => {
+      if (snap.exists) {
+        try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e) {}
+      }
+      _startApp();
+    }).catch(e => { console.error('FB load:', e); _startApp(); });
   } catch(e) {
-    console.error('Firebase init error:', e);
+    console.error('Firebase init:', e);
+    _startApp();
   }
-  _startApp();
-})();
+}).catch(() => _startApp());
 </script>
 </body>
 </html>
