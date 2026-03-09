@@ -972,48 +972,7 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
-  authDomain: "edunote-96bd7.firebaseapp.com",
-  projectId: "edunote-96bd7",
-  storageBucket: "edunote-96bd7.firebasestorage.app",
-  messagingSenderId: "769455023609",
-  appId: "1:769455023609:web:48fc29f58bf069acaa0928",
-  measurementId: "G-LSBZ92QXT8"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const DOC_REF = doc(db, 'edunote', 'main');
-
-window._firestore_save = async function(data) {
-  try { await setDoc(DOC_REF, { data: JSON.stringify(data) }); } catch(e){ console.error('Firebase save error:', e); }
-};
-
-window._firestore_load = async function() {
-  try {
-    const snap = await getDoc(DOC_REF);
-    if (snap.exists()) return JSON.parse(snap.data().data);
-  } catch(e){ console.error('Firebase load error:', e); }
-  return null;
-};
-
-// 로드 완료 후 앱 초기화
-window._firestore_load().then(cloudData => {
-  if (cloudData) {
-    D = Object.assign(D, cloudData);
-    _fixData();
-  }
-  _initApp();
-});
-</script>
-
-<script type="module">
+<script>
 // ── DATA ──
 const DB_KEY = 'teacher_notebook_v1';
 let D = {
@@ -1063,10 +1022,9 @@ function load() {
 let _saveTimer = null;
 function save() {
   try { localStorage.setItem(DB_KEY, JSON.stringify(D)); } catch(e){}
-  // Firebase에 저장 (500ms 디바운스)
   if (_saveTimer) clearTimeout(_saveTimer);
   _saveTimer = setTimeout(() => {
-    if (window._firestore_save) window._firestore_save(D);
+    if (window._fbSave) window._fbSave(D);
   }, 500);
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
@@ -2292,12 +2250,12 @@ function _startApp() {
   renderDashboard();
 }
 
-// localStorage 먼저 로드
-load();
-
-// Firebase 연동
-import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js").then(({initializeApp}) =>
-  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({getFirestore, doc, getDoc, setDoc}) => {
+// Firebase 초기화 및 앱 시작
+(async function() {
+  load(); // localStorage 먼저 로드
+  try {
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+    const { getFirestore, doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
     const app = initializeApp({
       apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
       authDomain: "edunote-96bd7.firebaseapp.com",
@@ -2308,24 +2266,20 @@ import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js").then(({init
     });
     const db = getFirestore(app);
     const REF = doc(db, 'edunote', 'main');
-
-    // Firebase 저장 함수 등록
-    window._firestore_save = async (data) => {
-      try { await setDoc(REF, { data: JSON.stringify(data) }); } catch(e) { console.error(e); }
+    // 저장 함수
+    window._fbSave = async (data) => {
+      try { await setDoc(REF, { data: JSON.stringify(data) }); } catch(e) { console.error('FB save:', e); }
     };
-
-    // Firebase에서 불러와서 앱 시작
-    return getDoc(REF).then(snap => {
-      if (snap.exists()) {
-        try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e){}
-      }
-      _startApp();
-    });
-  })
-).catch(e => {
-  console.error('Firebase error:', e);
+    // Firebase에서 불러오기
+    const snap = await getDoc(REF);
+    if (snap.exists()) {
+      try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e) {}
+    }
+  } catch(e) {
+    console.error('Firebase init error:', e);
+  }
   _startApp();
-});
+})();
 </script>
 </body>
 </html>
