@@ -972,7 +972,48 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   </div>
 </div>
 
-<script>
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
+  authDomain: "edunote-96bd7.firebaseapp.com",
+  projectId: "edunote-96bd7",
+  storageBucket: "edunote-96bd7.firebasestorage.app",
+  messagingSenderId: "769455023609",
+  appId: "1:769455023609:web:48fc29f58bf069acaa0928",
+  measurementId: "G-LSBZ92QXT8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const DOC_REF = doc(db, 'edunote', 'main');
+
+window._firestore_save = async function(data) {
+  try { await setDoc(DOC_REF, { data: JSON.stringify(data) }); } catch(e){ console.error('Firebase save error:', e); }
+};
+
+window._firestore_load = async function() {
+  try {
+    const snap = await getDoc(DOC_REF);
+    if (snap.exists()) return JSON.parse(snap.data().data);
+  } catch(e){ console.error('Firebase load error:', e); }
+  return null;
+};
+
+// 로드 완료 후 앱 초기화
+window._firestore_load().then(cloudData => {
+  if (cloudData) {
+    D = Object.assign(D, cloudData);
+    _fixData();
+  }
+  _initApp();
+});
+</script>
+
+<script type="module">
 // ── DATA ──
 const DB_KEY = 'teacher_notebook_v1';
 let D = {
@@ -2240,8 +2281,8 @@ document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',(
 }));
 
 // ── INIT ──
-function _initApp(){
-  load();
+function _startApp() {
+  _fixData();
   if(localStorage.getItem('sidebarCollapsed')==='1') document.body.classList.add('sidebar-collapsed');
   const d=TODAY;
   document.getElementById('sidebar-date').textContent=`${DAYS_KO[d.getDay()]}, ${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
@@ -2251,42 +2292,40 @@ function _initApp(){
   renderDashboard();
 }
 
-// Firebase 초기화 (모듈 방식으로 동적 import)
-(async function() {
-  try {
-    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-    const { getFirestore, doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+// localStorage 먼저 로드
+load();
 
-    const firebaseConfig = {
+// Firebase 연동
+import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js").then(({initializeApp}) =>
+  import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js").then(({getFirestore, doc, getDoc, setDoc}) => {
+    const app = initializeApp({
       apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
       authDomain: "edunote-96bd7.firebaseapp.com",
       projectId: "edunote-96bd7",
       storageBucket: "edunote-96bd7.firebasestorage.app",
       messagingSenderId: "769455023609",
-      appId: "1:769455023609:web:48fc29f58bf069acaa0928",
-      measurementId: "G-LSBZ92QXT8"
-    };
-
-    const app = initializeApp(firebaseConfig);
+      appId: "1:769455023609:web:48fc29f58bf069acaa0928"
+    });
     const db = getFirestore(app);
-    const DOC_REF = doc(db, 'edunote', 'main');
+    const REF = doc(db, 'edunote', 'main');
 
-    window._firestore_save = async function(data) {
-      try { await setDoc(DOC_REF, { data: JSON.stringify(data) }); } catch(e){ console.error('Firebase save error:', e); }
+    // Firebase 저장 함수 등록
+    window._firestore_save = async (data) => {
+      try { await setDoc(REF, { data: JSON.stringify(data) }); } catch(e) { console.error(e); }
     };
 
-    // Firebase에서 데이터 불러와서 앱 초기화
-    const snap = await getDoc(DOC_REF);
-    if (snap.exists()) {
-      const cloudData = JSON.parse(snap.data().data);
-      D = Object.assign(D, cloudData);
-      _fixData();
-    }
-  } catch(e) {
-    console.error('Firebase init error:', e);
-  }
-  _initApp();
-})();
+    // Firebase에서 불러와서 앱 시작
+    return getDoc(REF).then(snap => {
+      if (snap.exists()) {
+        try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e){}
+      }
+      _startApp();
+    });
+  })
+).catch(e => {
+  console.error('Firebase error:', e);
+  _startApp();
+});
 </script>
 </body>
 </html>
