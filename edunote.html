@@ -1336,7 +1336,7 @@ function renderDashboard() {
       <div class="card">
         <div class="card-header">
           <div class="card-title">${_dh('secrets')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px;color:var(--text-lighter);"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Secure Notes</div>
-          <div id="dash-secrets-actions"></div>
+          ${_mwc('secrets')}<div id="dash-secrets-actions"></div>
         </div>
         <div class="secrets-content-wrap">
           <div id="dash-secrets-items"></div>
@@ -1351,7 +1351,7 @@ function renderDashboard() {
       <div class="card">
         <div class="card-header">
           <div class="card-title">${_dh('dayplan')}Today's Schedule</div>
-          <button class="btn btn-ghost btn-sm" onclick="goToCalendarDate('${_dayplanViewDate}')" title="Open in Calendar" style="font-size:13px;padding:2px 6px;">📅</button>
+          ${_mwc('dayplan')}<button class="btn btn-ghost btn-sm" onclick="goToCalendarDate('${_dayplanViewDate}')" title="Open in Calendar" style="font-size:13px;padding:2px 6px;">📅</button>
           <button class="btn btn-secondary btn-sm" onclick="moveDayplanToTasks()" title="Move today's schedule to Unclassified Works" style="font-size:11px;">→ Unclassified</button>
         </div>
         <div class="widget-body">${dayplanHtml}</div>
