@@ -150,6 +150,11 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
 .tab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:var(--shadow);}
 
 
+/* ── Mobile Widget Controls ── */
+.mobile-widget-controls{display:none;align-items:center;gap:4px;margin-left:auto;}
+.mwc-btn{width:26px;height:26px;border:1px solid var(--border);background:var(--surface2);border-radius:5px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;color:var(--text-light);}
+.mwc-btn:hover{background:var(--border);}
+
 /* ── Empty state ── */
 .empty{text-align:center;padding:32px 20px;color:var(--text-lighter);}
 .empty-text{font-size:12.5px;}
@@ -336,7 +341,9 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   .dash-grid{grid-template-columns:1fr !important;grid-auto-rows:auto !important;}
   .dash-widget{grid-column:1 / -1 !important;grid-row:auto !important;}
   .dash-widget .card{height:auto;min-height:180px;}
-  .rh,.dh{display:none !important;}
+  .rh{display:none !important;}
+  .dh{display:none !important;}
+  .mobile-widget-controls{display:flex !important;}
   #cal-week-grid{overflow-x:auto;}
   #cal-week-grid .cal-week-grid{min-width:580px;}
   #cal-day-view{overflow-x:auto;}
@@ -1070,6 +1077,32 @@ function _dh(id) {
   return `<span class="dh" onmousedown="startDrag(event,'${id}')">⠿</span>`;
 }
 
+// 모바일 위젯 순서/높이 조절
+const WIDGET_ORDER = ['tasks','progress','records','secrets','dayplan','routine'];
+function _mwc(id) {
+  return `<div class="mobile-widget-controls">
+    <button class="mwc-btn" onclick="mwcMove('${id}',-1)">▲</button>
+    <button class="mwc-btn" onclick="mwcMove('${id}',1)">▼</button>
+    <button class="mwc-btn" onclick="mwcHeight('${id}',-1)">−</button>
+    <button class="mwc-btn" onclick="mwcHeight('${id}',1)">+</button>
+  </div>`;
+}
+function mwcMove(id, dir) {
+  if (!D.mobileOrder) D.mobileOrder = [...WIDGET_ORDER];
+  const order = D.mobileOrder;
+  const i = order.indexOf(id);
+  if (i < 0) return;
+  const j = i + dir;
+  if (j < 0 || j >= order.length) return;
+  [order[i], order[j]] = [order[j], order[i]];
+  save(); renderDashboard();
+}
+function mwcHeight(id, dir) {
+  if (!D.mobileHeight) D.mobileHeight = {};
+  D.mobileHeight[id] = Math.max(120, (D.mobileHeight[id] || 220) + dir * 80);
+  save(); renderDashboard();
+}
+
 function startDrag(e, id) {
   e.preventDefault(); e.stopPropagation();
   const gr = document.getElementById('dash-grid').getBoundingClientRect();
@@ -1276,7 +1309,7 @@ function renderDashboard() {
     <div class="dash-widget" id="dw-tasks" style="grid-column:${L.tasks.cs} / span ${L.tasks.col};grid-row:${L.tasks.rs} / span ${L.tasks.row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">${_dh('tasks')}Unclassified Works</div>
+          <div class="card-title">${_dh('tasks')}Unclassified Works</div>${_mwc('tasks')}
           <button class="btn btn-secondary btn-sm" onclick="moveTasksToDayplan()" title="Move checked items to Today's Schedule" style="font-size:11px;">→ Schedule</button>
         </div>
         <div class="widget-body">${tasksHtml}</div>
@@ -1285,14 +1318,14 @@ function renderDashboard() {
     </div>
     <div class="dash-widget" id="dw-progress" style="grid-column:${L.progress.cs} / span ${L.progress.col};grid-row:${L.progress.rs} / span ${L.progress.row};">
       <div class="card">
-        <div class="card-header"><div class="card-title">${_dh('progress')}Progress</div></div>
+        <div class="card-header"><div class="card-title">${_dh('progress')}Progress</div>${_mwc('progress')}</div>
         <div class="widget-body">${progressHtml}</div>
       </div>
       ${_rh('progress')}
     </div>
     <div class="dash-widget" id="dw-records" style="grid-column:${L.records.cs} / span ${L.records.col};grid-row:${L.records.rs} / span ${L.records.row};">
       <div class="card">
-        <div class="card-header"><div class="card-title">${_dh('records')}Recent Records</div></div>
+        <div class="card-header"><div class="card-title">${_dh('records')}Recent Records</div>${_mwc('records')}</div>
         <div class="widget-body">${recsHtml}</div>
       </div>
       ${_rh('records')}
@@ -1325,12 +1358,30 @@ function renderDashboard() {
     </div>
     <div class="dash-widget" id="dw-routine" style="grid-column:${L.routine.cs} / span ${L.routine.col};grid-row:${L.routine.rs} / span ${L.routine.row};">
       <div class="card">
-        <div class="card-header"><div class="card-title">${_dh('routine')}Routine</div></div>
+        <div class="card-header"><div class="card-title">${_dh('routine')}Routine</div>${_mwc('routine')}</div>
         <div class="widget-body">${routineHtml}</div>
       </div>
       ${_rh('routine')}
     </div>`;
   renderSecrets();
+
+  // 모바일 위젯 순서 적용
+  if (window.innerWidth <= 768 && D.mobileOrder) {
+    const grid = document.getElementById('dash-grid');
+    const order = D.mobileOrder;
+    order.forEach(id => {
+      const el = document.getElementById('dw-' + id);
+      if (el) grid.appendChild(el);
+    });
+  }
+
+  // 모바일 위젯 높이 적용
+  if (window.innerWidth <= 768 && D.mobileHeight) {
+    Object.entries(D.mobileHeight).forEach(([id, h]) => {
+      const el = document.getElementById('dw-' + id);
+      if (el) el.querySelector('.card').style.minHeight = h + 'px';
+    });
+  }
 }
 
 // ── EVENTS ──
