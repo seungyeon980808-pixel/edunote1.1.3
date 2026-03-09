@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>edunote</title>
 <style>
@@ -2301,48 +2303,29 @@ function _startApp() {
   renderDashboard();
 }
 
-// Firebase CDN 스크립트 로드 후 초기화
-function _loadFirebase() {
-  return new Promise((resolve) => {
-    const s1 = document.createElement('script');
-    s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
-    s1.onload = () => {
-      const s2 = document.createElement('script');
-      s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
-      s2.onload = () => resolve();
-      document.head.appendChild(s2);
-    };
-    document.head.appendChild(s1);
-  });
-}
-
 load(); // localStorage 먼저 로드
-_loadFirebase().then(() => {
-  try {
-    const app = firebase.initializeApp({
-      apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
-      authDomain: "edunote-96bd7.firebaseapp.com",
-      projectId: "edunote-96bd7",
-      storageBucket: "edunote-96bd7.firebasestorage.app",
-      messagingSenderId: "769455023609",
-      appId: "1:769455023609:web:48fc29f58bf069acaa0928"
-    });
-    const db = firebase.firestore();
-    const REF = db.collection('edunote').doc('main');
-    // 저장 함수
-    window._fbSave = (data) => REF.set({ data: JSON.stringify(data) }).catch(e => console.error('FB save:', e));
-    // Firebase에서 불러오기
-    REF.get().then(snap => {
-      if (snap.exists) {
-        try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e) {}
-      }
-      _startApp();
-    }).catch(e => { console.error('FB load:', e); _startApp(); });
-  } catch(e) {
-    console.error('Firebase init:', e);
+try {
+  const app = firebase.initializeApp({
+    apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
+    authDomain: "edunote-96bd7.firebaseapp.com",
+    projectId: "edunote-96bd7",
+    storageBucket: "edunote-96bd7.firebasestorage.app",
+    messagingSenderId: "769455023609",
+    appId: "1:769455023609:web:48fc29f58bf069acaa0928"
+  });
+  const db = firebase.firestore();
+  const REF = db.collection('edunote').doc('main');
+  window._fbSave = (data) => REF.set({ data: JSON.stringify(data) }).catch(e => console.error('FB save:', e));
+  REF.get().then(snap => {
+    if (snap.exists) {
+      try { D = Object.assign(D, JSON.parse(snap.data().data)); } catch(e) {}
+    }
     _startApp();
-  }
-}).catch(() => _startApp());
+  }).catch(e => { console.error('FB load:', e); _startApp(); });
+} catch(e) {
+  console.error('Firebase init:', e);
+  _startApp();
+}
 </script>
 </body>
 </html>
