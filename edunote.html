@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>edunote</title>
 <style>
@@ -195,6 +196,13 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
 .week-slot.today-col{background:rgba(26,86,219,0.05);}
 .slot-evt{font-size:10.5px;padding:2px 5px;border-radius:3px;border-left:2px solid var(--primary);background:var(--primary-dim);color:var(--primary);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
+/* Weekly 5-min slot grid */
+.week-slot-5m{height:12px;box-sizing:border-box;cursor:pointer;}
+.week-slot-5m:hover{background:var(--surface2);}
+.week-day-col{user-select:none;}
+.week-evt-block{position:absolute;border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer;overflow:hidden;box-sizing:border-box;transition:filter 0.1s;}
+.week-evt-block:hover{filter:brightness(0.94);}
+
 /* Daily */
 .cal-day-view{display:grid;grid-template-columns:52px 1fr 1fr;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
 .day-col-hdr{background:var(--bg);font-size:11px;font-weight:600;color:var(--text-lighter);padding:7px 10px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);}
@@ -322,6 +330,12 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
 .secrets-cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(245,244,240,0.6);backdrop-filter:blur(2px);border-radius:var(--radius-sm);cursor:pointer;}
 .secrets-cover:hover .btn{background:var(--primary-dark);}
 
+/* ── Manual Edit Mode ── */
+@keyframes manualShake{0%,100%{transform:rotate(0deg)}25%{transform:rotate(-1.8deg)}75%{transform:rotate(1.8deg)}}
+.manual-edit-shake{animation:manualShake 0.28s ease-in-out infinite;transform-origin:center;cursor:grab;}
+.manual-edit-shake:active{cursor:grabbing;}
+.manual-drag-over{outline:2px dashed var(--primary);outline-offset:-2px;}
+
 /* ── Mobile Topbar & Overlay ── */
 .mobile-topbar{display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--primary);position:sticky;top:0;z-index:90;box-shadow:0 2px 8px rgba(26,86,219,0.2);}
 .hamburger{width:36px;height:36px;border:none;background:rgba(255,255,255,0.18);border-radius:var(--radius-sm);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;flex-shrink:0;padding:0;}
@@ -369,6 +383,55 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   .cal-day-hdr{padding:6px 2px;font-size:10.5px;}
   .day-evt{font-size:9.5px;}
 }
+
+/* ── Urgency / Importance Dial ── */
+.dial-row{display:flex;gap:4px;}
+.dial-pill{flex:1;padding:4px 2px;font-size:10.5px;border-radius:4px;cursor:pointer;transition:all 0.12s;border:1px solid var(--border);background:var(--surface);color:var(--text-lighter);text-align:center;font-family:inherit;line-height:1.3;}
+.dial-pill:hover{opacity:0.88;}
+
+/* ── Unscheduled panel ── */
+.unscheduled-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm) var(--radius-sm) 0 0;padding:7px 10px 5px;border-bottom:none;}
+.unscheduled-panel-hdr{font-size:10.5px;font-weight:700;color:var(--text-light);margin-bottom:5px;}
+.unscheduled-panel-inner{display:flex;overflow-x:auto;gap:6px;padding:2px 0 4px;-webkit-overflow-scrolling:touch;}
+.unscheduled-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--text-lighter);border-radius:4px;font-size:11px;color:var(--text-light);cursor:grab;white-space:nowrap;user-select:none;flex-shrink:0;}
+.unscheduled-chip:hover{border-color:var(--border2);background:var(--bg);}
+.unscheduled-chip:active{cursor:grabbing;}
+
+/* ── Dayplan block in weekly time grid ── */
+.week-dayplan-block{position:absolute;border-radius:4px;padding:4px 8px;font-size:13px;cursor:pointer;overflow:hidden;box-sizing:border-box;border-left:2px solid var(--secondary);background:rgba(5,150,105,0.12);color:var(--secondary);z-index:3;}
+.week-dayplan-block:hover{filter:brightness(0.92);}
+.week-slot-5m.drag-over{background:rgba(5,150,105,0.15) !important;}
+
+/* ── Urgency / Importance dots ── */
+.ui-dots{display:inline-flex;gap:3px;align-items:center;vertical-align:middle;}
+
+/* ── Custom time select ── */
+.time-select-wrap{display:flex;align-items:center;gap:4px;}
+.time-select-wrap .form-select{padding:9px 6px;min-width:62px;flex:1;}
+
+/* ── Lock state ── */
+.locked-banner{background:var(--danger-dim);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-sm);padding:5px 12px;font-size:12.5px;font-weight:600;color:var(--danger);display:none;align-items:center;gap:5px;}
+body.locked .locked-banner{display:flex;}
+body.locked #stu-setech-table textarea,body.locked #stu-setech-table input{pointer-events:none;background:var(--surface2)!important;color:var(--text-light);}
+body.locked .btn-editing{display:none!important;}
+
+/* ── Violation highlights ── */
+.vio-text{background:#fef08a;text-decoration:underline wavy #dc2626;cursor:pointer;border-radius:2px;padding:0 2px;position:relative;}
+.vio-text:hover{background:#fde047;}
+.vio-tooltip{position:absolute;z-index:500;background:#1a2844;color:white;border-radius:8px;padding:10px 14px;font-size:12px;max-width:280px;white-space:normal;box-shadow:0 4px 18px rgba(0,0,0,0.3);top:calc(100% + 4px);left:0;min-width:200px;line-height:1.6;}
+.vio-tooltip .vio-rule{font-weight:600;color:#fca5a5;font-size:11px;margin-bottom:5px;}
+.vio-tooltip .vio-sug{color:#a5f3fc;font-size:11px;margin-top:5px;}
+
+/* ── Review modal ── */
+.review-modal-body{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.review-text-panel{border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;font-size:13.5px;line-height:1.9;color:var(--text);background:var(--surface2);overflow-y:auto;max-height:460px;}
+.review-edit-panel{display:flex;flex-direction:column;gap:8px;}
+.review-nav{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.review-student-info{flex:1;font-size:14px;font-weight:600;color:var(--text);text-align:center;}
+.review-loading{display:flex;align-items:center;justify-content:center;min-height:180px;color:var(--text-lighter);font-size:13px;}
+.vio-spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:_spin 0.7s linear infinite;margin-right:8px;vertical-align:middle;}
+@keyframes _spin{to{transform:rotate(360deg);}}
+@media(max-width:700px){.review-modal-body{grid-template-columns:1fr;}}
 
 </style>
 </head>
@@ -423,6 +486,10 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
       <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
       <span class="nav-label">Notes</span>
     </div>
+    <div class="nav-item" data-page="eisenhower" title="Eisenhower Matrix">
+      <span class="nav-icon">🎯</span>
+      <span class="nav-label">Eisenhower</span>
+    </div>
   </nav>
   <div class="sidebar-footer">v1.0 · Data stored in browser</div>
 </aside>
@@ -440,11 +507,18 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
 
 <!-- DASHBOARD -->
 <div id="page-dashboard" class="page active">
-  <div class="page-header-row">
-    <div>
+  <div class="page-header-row" style="align-items:center;">
+    <div id="dash-title-block">
       <div class="today-chip" id="today-chip"></div>
       <div class="page-title">Dashboard</div>
       <div class="page-subtitle">Today's overview at a glance</div>
+    </div>
+    <div id="dash-search-wrap" style="position:relative;flex-shrink:0;">
+      <div class="search-bar" style="border-radius:var(--radius);">
+        <span style="font-size:14px;color:var(--text-lighter);">🔍</span>
+        <input type="text" id="dash-search-input" placeholder="검색..." oninput="_dashSearch(this.value)" onkeydown="if(event.key==='Escape'){this.value='';_dashSearch('');}">
+      </div>
+      <div id="dash-search-dropdown" style="display:none;position:absolute;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:320px;overflow-y:auto;width:100%;top:calc(100% + 4px);left:0;"></div>
     </div>
   </div>
   <div class="dash-grid" id="dash-grid"></div>
@@ -534,16 +608,19 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   <div id="stu-list-view">
     <div class="page-header-row mb-16">
       <div>
-        <div class="page-title">Students</div>
-        <div class="page-subtitle">Manage student info and records</div>
+        <div class="page-title">세부능력 및 특기사항</div>
+        <div class="page-subtitle">학생 세특 관리</div>
       </div>
-      <button class="btn btn-primary" onclick="openModal('stu-modal')">+ Add Student</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="locked-banner" id="lock-status">🔒 마감됨</span>
+        <button class="btn btn-secondary" onclick="openManualModal()">📖 메뉴얼</button>
+        <button class="btn btn-secondary btn-editing" id="review-btn" onclick="startSetechReview()">🔍 기재요령 검토</button>
+        <button class="btn btn-secondary" id="lock-btn" onclick="lockBtnClick()">마감</button>
+        <button class="btn btn-secondary" onclick="exportNeisExcel()">📥 나이스 내보내기</button>
+      </div>
     </div>
-    <div class="search-bar mb-16">
-      <span class="search-icon">Search</span>
-      <input type="text" id="stu-search" placeholder="Search by name..." oninput="filterStudents()">
-    </div>
-    <div class="student-grid" id="stu-grid"></div>
+    <div class="sub-tabs mb-16" id="stu-class-tabs"></div>
+    <div id="stu-setech-table"></div>
   </div>
   <div id="stu-detail-view" style="display:none">
     <div class="flex items-center gap-12 mb-20">
@@ -642,6 +719,17 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   </div>
 </div>
 
+<!-- EISENHOWER MATRIX -->
+<div id="page-eisenhower" class="page">
+  <div class="page-header-row">
+    <div>
+      <div class="page-title">🎯 Eisenhower Matrix</div>
+      <div class="page-subtitle">Prioritize by urgency &amp; importance</div>
+    </div>
+  </div>
+  <div id="eisenhower-grid"></div>
+</div>
+
 </main>
 
 <!-- ── MODALS ── -->
@@ -676,7 +764,10 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
     <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="evt-title" placeholder="일정 제목"></div>
     <div class="g2">
       <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="evt-date"></div>
-      <div class="form-group"><label class="form-label">Time</label><input type="time" class="form-input" id="evt-time"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">Start</label><div id="evt-time-wrap"></div></div>
+        <div class="form-group" style="margin-bottom:0"><label class="form-label">End</label><div id="evt-end-time-wrap"></div></div>
+      </div>
     </div>
     <div class="form-group"><label class="form-label">Type</label>
       <select class="form-select" id="evt-type">
@@ -686,6 +777,14 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
     </div>
     <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="evt-desc" placeholder="Content (optional)"></textarea></div>
     <div class="form-group"><label class="form-label">Notes</label><input type="text" class="form-input" id="evt-note" placeholder="Notes (optional)"></div>
+    <div class="form-group">
+      <label class="form-label">Urgency</label>
+      <div class="dial-row" id="evt-urgency-dial"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Importance</label>
+      <div class="dial-row" id="evt-importance-dial"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('event-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveEvent()">Save</button>
@@ -892,12 +991,15 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
       <div class="modal-title">Edit Schedule Item</div>
       <button class="modal-close" onclick="closeModal('dayplan-edit-modal')">&#215;</button>
     </div>
+    <div class="form-group"><label class="form-label">Task</label>
+      <input type="text" class="form-input" id="dayplan-edit-text" placeholder="Enter task...">
+    </div>
     <div class="g2">
-      <div class="form-group"><label class="form-label">Period</label>
-        <select class="form-select" id="dayplan-edit-period"></select>
+      <div class="form-group"><label class="form-label">Start Time</label>
+        <div id="dayplan-edit-startTime-wrap"></div>
       </div>
-      <div class="form-group"><label class="form-label">Task</label>
-        <input type="text" class="form-input" id="dayplan-edit-text" placeholder="Enter task...">
+      <div class="form-group"><label class="form-label">End Time</label>
+        <div id="dayplan-edit-endTime-wrap"></div>
       </div>
     </div>
     <div class="form-group"><label class="form-label">Description</label>
@@ -907,12 +1009,20 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
       <input type="text" class="form-input" id="dayplan-edit-note" placeholder="Optional">
     </div>
     <div class="form-group">
-      <label class="form-label">step</label>
+      <label class="form-label">Steps</label>
       <div style="display:flex;gap:6px;margin-bottom:8px;">
         <input type="text" class="form-input" id="dayplan-step-input" placeholder="Add a step…" onkeydown="if(event.key==='Enter'){addDayplanStep();event.preventDefault();}">
         <button class="btn btn-secondary btn-sm" onclick="addDayplanStep()">+ Add</button>
       </div>
       <div id="dayplan-step-list"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Urgency</label>
+      <div class="dial-row" id="dayplan-urgency-dial"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Importance</label>
+      <div class="dial-row" id="dayplan-importance-dial"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('dayplan-edit-modal')">Cancel</button>
@@ -928,16 +1038,8 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
       <div class="modal-title">Edit Unclassified Work</div>
       <button class="modal-close" onclick="closeModal('task-edit-modal')">&#215;</button>
     </div>
-    <div class="g2">
-      <div class="form-group"><label class="form-label">Category</label>
-        <select class="form-select" id="task-edit-cat">
-          <option value="general">General</option><option value="urgent">Urgent</option>
-          <option value="class">Class</option><option value="admin">Admin</option><option value="student">Student</option>
-        </select>
-      </div>
-      <div class="form-group"><label class="form-label">Task</label>
-        <input type="text" class="form-input" id="task-edit-text" placeholder="Enter task...">
-      </div>
+    <div class="form-group"><label class="form-label">Task</label>
+      <input type="text" class="form-input" id="task-edit-text" placeholder="Enter task...">
     </div>
     <div class="form-group"><label class="form-label">Description</label>
       <textarea class="form-textarea" id="task-edit-desc" placeholder="Details, materials, goals…" style="min-height:70px;"></textarea>
@@ -953,9 +1055,34 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
       </div>
       <div id="task-step-list"></div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Urgency</label>
+      <div class="dial-row" id="task-urgency-dial"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Importance</label>
+      <div class="dial-row" id="task-importance-dial"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('task-edit-modal')">Cancel</button>
       <button class="btn btn-primary" onclick="saveTaskEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Unscheduled drop time picker -->
+<div class="modal-overlay" id="unscheduled-drop-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">Schedule Item</div>
+      <button class="modal-close" onclick="closeModal('unscheduled-drop-modal')">&#215;</button>
+    </div>
+    <div id="unscheduled-drop-conflict" style="display:none;padding:8px 10px;background:var(--danger-dim);border:1px solid rgba(220,38,38,0.2);border-radius:var(--radius-sm);margin-bottom:12px;font-size:12.5px;color:var(--danger);"></div>
+    <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="unscheduled-drop-date"></div>
+    <div class="form-group"><label class="form-label">Time</label><div id="unscheduled-drop-time-wrap"></div></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('unscheduled-drop-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmUnscheduledDrop()">Schedule</button>
     </div>
   </div>
 </div>
@@ -981,6 +1108,105 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
   </div>
 </div>
 
+<!-- Unlock modal -->
+<div class="modal-overlay" id="unlock-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">🔒 마감 취소</div>
+      <button class="modal-close" onclick="closeModal('unlock-modal')">&#215;</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;">마감을 취소하려면 비밀번호를 입력하세요.</p>
+    <div class="form-group">
+      <label class="form-label">비밀번호</label>
+      <input type="password" class="form-input" id="unlock-pw-input" placeholder="비밀번호 입력" maxlength="10" autocomplete="off" onkeydown="if(event.key==='Enter')confirmUnlock()">
+      <div id="unlock-pw-error" style="color:var(--danger);font-size:12px;margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('unlock-modal')">취소</button>
+      <button class="btn btn-primary" onclick="confirmUnlock()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- 메뉴얼 modal -->
+<div class="modal-overlay" id="manual-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">📖 메뉴얼 바로가기</div>
+      <button class="modal-close" onclick="closeModal('manual-modal')">&#215;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <a href="https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing" target="_blank" rel="noopener"
+         style="display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);text-decoration:none;color:var(--text);background:var(--surface);transition:all 0.15s;"
+         onmouseover="this.style.borderColor='var(--primary)';this.style.background='var(--primary-dim)'"
+         onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--surface)'">
+        <span style="font-size:20px;">📋</span>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13.5px;">대왕중학교 학교규정</div>
+          <div style="font-size:11px;color:var(--text-lighter);margin-top:2px;">Google Drive 문서 열기</div>
+        </div>
+        <span style="color:var(--text-lighter);font-size:13px;">↗</span>
+      </a>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('manual-modal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 메뉴얼 삭제 비밀번호 모달 -->
+<div class="modal-overlay" id="manual-delete-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">🔒 링크 삭제</div>
+      <button class="modal-close" onclick="closeModal('manual-delete-modal')">&#215;</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-light);margin-bottom:16px;">삭제하려면 비밀번호를 입력하세요.</p>
+    <div class="form-group">
+      <input type="password" class="form-input" id="manual-delete-pw" placeholder="비밀번호 입력" maxlength="10" autocomplete="off" onkeydown="if(event.key==='Enter')_manualDeleteConfirm()">
+      <div id="manual-delete-error" style="color:var(--danger);font-size:12px;margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('manual-delete-modal')">취소</button>
+      <button class="btn btn-danger" onclick="_manualDeleteConfirm()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- 기재요령 검토 modal -->
+<div class="modal-overlay" id="setech-review-modal">
+  <div class="modal" style="max-width:920px;width:96%;">
+    <div class="modal-header">
+      <div class="modal-title">🔍 기재요령 검토</div>
+      <button class="modal-close" onclick="closeModal('setech-review-modal')">&#215;</button>
+    </div>
+    <div class="review-nav">
+      <button class="btn btn-secondary btn-sm" id="review-prev-btn" onclick="reviewNav(-1)">◀ 이전</button>
+      <div class="review-student-info" id="review-student-info"></div>
+      <button class="btn btn-secondary btn-sm" id="review-next-btn" onclick="reviewNav(1)">다음 ▶</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button class="btn btn-primary btn-sm" id="review-sem1-btn" onclick="reviewSwitchSem(1)">1학기 세특</button>
+      <button class="btn btn-secondary btn-sm" id="review-sem2-btn" onclick="reviewSwitchSem(2)">2학기 세특</button>
+    </div>
+    <div class="review-modal-body">
+      <div>
+        <div style="font-size:11.5px;font-weight:600;color:var(--text-lighter);margin-bottom:6px;">검토 결과 (위반 항목 클릭 시 상세 보기)</div>
+        <div class="review-text-panel" id="review-text-panel"></div>
+      </div>
+      <div class="review-edit-panel">
+        <div style="font-size:11.5px;font-weight:600;color:var(--text-lighter);margin-bottom:6px;">직접 편집</div>
+        <textarea class="form-textarea" id="review-edit-ta" style="flex:1;min-height:380px;font-size:13px;line-height:1.8;" maxlength="1500"></textarea>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap;">
+          <input type="checkbox" id="review-save-check" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <label for="review-save-check" style="font-size:12.5px;color:var(--text-light);cursor:pointer;">이 내용으로 저장</label>
+          <button class="btn btn-primary btn-sm" onclick="reviewApplySave()" style="margin-left:auto;">저장 반영</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ── DATA ──
 const DB_KEY = 'teacher_notebook_v1';
@@ -992,8 +1218,80 @@ let D = {
   secrets: { hash: null, items: [] },
   dayplan: [],
   routines: [],
-  dashLayout: { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1} }
+  dashLayout: { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6} },
+  manuals: [{title:"대왕중학교 학교규정", url:"https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing"}]
 };
+
+// ── DIAL / TIME HELPERS ──
+const DIAL_LABELS=['低(하)','中(중)','高(상)'];
+const _URG_COLORS=['#fca5a5','#f87171','#dc2626'];
+const _IMP_COLORS=['#93c5fd','#3b82f6','#1a56db'];
+const _dialValues={};
+
+function renderDialUI(containerId,prefix,value,type){
+  const key=prefix+'_'+type;
+  _dialValues[key]=value||3;
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const colors=type==='urgency'?_URG_COLORS:_IMP_COLORS;
+  const sel=_dialValues[key];
+  el.innerHTML=DIAL_LABELS.map((lbl,i)=>{
+    const lvl=i+1;
+    const active=lvl<=sel;
+    const bg=active?colors[i]:'var(--surface)';
+    const textColor=active?'white':'var(--text-lighter)';
+    const borderColor=active?colors[i]:'var(--border)';
+    return `<button type="button" class="dial-pill" onclick="_dialValues['${key}']=${lvl};renderDialUI('${containerId}','${prefix}',${lvl},'${type}')" style="background:${bg};color:${textColor};border-color:${borderColor};">${lbl}</button>`;
+  }).join('');
+}
+
+function _makeHrOpts(selH){let s='<option value="">HH</option>';for(let h=0;h<24;h++){const v=String(h).padStart(2,'0');s+=`<option value="${v}"${selH===v?' selected':''}>${v}</option>`;}return s;}
+function _makeMinOpts(selM){let s='<option value="">MM</option>';for(let m=0;m<60;m+=5){const v=String(m).padStart(2,'0');s+=`<option value="${v}"${selM===v?' selected':''}>${v}</option>`;}return s;}
+function _timeSelectHtml(id){return `<div class="time-select-wrap"><select class="form-select" id="${id}-h">${_makeHrOpts('')}</select><span style="font-weight:600;padding:0 2px;">:</span><select class="form-select" id="${id}-m">${_makeMinOpts('')}</select></div>`;}
+function _setTimeSelect(id,val){const p=(val||'').split(':');const hEl=document.getElementById(id+'-h');const mEl=document.getElementById(id+'-m');if(hEl)hEl.value=p[0]||'';if(mEl)mEl.value=p[1]||'';}
+function _getTimeSelect(id){const hEl=document.getElementById(id+'-h');const mEl=document.getElementById(id+'-m');if(!hEl||!mEl)return'';const h=hEl.value,m=mEl.value;return(h&&m)?h+':'+m:'';}
+function _syncTimeInput(id){const inp=document.getElementById(id);if(inp)inp.value=_getTimeSelect(id);}
+
+function _getDpTime(p){
+  if(p.startTime) return p.startTime;
+  if(p.time) return p.time;
+  if(p.period&&D.schedule.times&&D.schedule.times[p.period-1]) return D.schedule.times[p.period-1];
+  return '';
+}
+function _sortByTime(a,b){
+  const ta=_getDpTime(a)||'99:99', tb=_getDpTime(b)||'99:99';
+  return ta.localeCompare(tb);
+}
+function _dpTimeLabel(p){
+  if(p.startTime&&p.endTime) return `${p.startTime}–${p.endTime}`;
+  const t=_getDpTime(p);
+  if(t) return t;
+  if(p.period) return `P${p.period}`;
+  return '—';
+}
+function _urgencyDot(u){
+  const v=u||3;
+  const lvl=v<=1?1:v<=2?2:3;
+  const cfg={1:{label:'U1',color:'var(--danger)',bg:'var(--danger-dim)'},2:{label:'U2',color:'var(--warning)',bg:'var(--warning-dim)'},3:{label:'U3',color:'var(--text-light)',bg:'var(--surface2)'}};
+  const c=cfg[lvl];
+  return `<span style="display:inline-block;font-size:11px;font-weight:700;border-radius:3px;padding:1px 5px;margin-right:2px;color:${c.color};background:${c.bg};">${c.label}</span>`;
+}
+function _importanceDot(imp){
+  const v=imp||3;
+  const lvl=v<=1?1:v<=2?2:3;
+  const cfg={1:{label:'I1',color:'var(--primary)',bg:'var(--primary-dim)'},2:{label:'I2',color:'var(--purple)',bg:'var(--purple-dim)'},3:{label:'I3',color:'var(--text-light)',bg:'var(--surface2)'}};
+  const c=cfg[lvl];
+  return `<span style="display:inline-block;font-size:11px;font-weight:700;border-radius:3px;padding:1px 5px;margin-right:2px;color:${c.color};background:${c.bg};">${c.label}</span>`;
+}
+function _checkConflict(date,time,excludeId){
+  const[h,m]=time.split(':').map(Number); const tMin=h*60+m;
+  for(const p of (D.dayplan||[])){
+    if(p.id===excludeId||p.date!==date||!p.time) continue;
+    const[ph,pm]=p.time.split(':').map(Number);
+    if(Math.abs(tMin-ph*60-pm)<=30) return true;
+  }
+  return false;
+}
 
 function _fixData() {
   if (!D.schedule) D.schedule = { periods: 7, times: ['09:00','10:00','11:00','12:00','14:00','15:00','16:00'], cells: {} };
@@ -1011,9 +1309,29 @@ function _fixData() {
     }
   });
   if (!D.routines) D.routines = [];
-  const _dlDef = { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1} };
+  if (!D.manuals) D.manuals = [{title:"대왕중학교 학교규정", url:"https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing"}];
+  // Migrate legacy setech → setech_1
+  (D.students||[]).forEach(s=>{
+    if(s.setech!==undefined&&s.setech_1===undefined){s.setech_1=s.setech;delete s.setech;}
+    if(s.setech_1===undefined) s.setech_1='';
+    if(s.setech_2===undefined) s.setech_2='';
+  });
+  // Ensure urgency/importance defaults
+  (D.tasks||[]).forEach(t=>{ if(!t.urgency) t.urgency=3; if(!t.importance) t.importance=3; });
+  (D.dayplan||[]).forEach(p=>{ if(!p.urgency) p.urgency=3; if(!p.importance) p.importance=3; if(!p.desc) p.desc=''; if(!p.note) p.note=''; if(!p.steps) p.steps=[]; });
+  (D.events||[]).forEach(e=>{ if(!e.urgency) e.urgency=3; if(!e.importance) e.importance=3; });
+  // Migrate legacy D.events into D.dayplan as the single source of truth
+  if ((D.events||[]).length) {
+    D.events.forEach(e=>{
+      if (!D.dayplan.find(p=>p.id===e.id)) {
+        D.dayplan.push({ id:e.id, text:e.title||'', date:e.date||'', startTime:e.time||'', endTime:e.end_time||'', done:false, desc:e.desc||'', note:'', steps:[], urgency:e.urgency||3, importance:e.importance||3 });
+      }
+    });
+    D.events = [];
+  }
+  const _dlDef = { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6} };
   if (!D.dashLayout) D.dashLayout = {};
-  ['tasks','progress','records','secrets','dayplan','routine'].forEach(w => {
+  ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals'].forEach(w => {
     const v = D.dashLayout[w];
     if (!v || typeof v !== 'object') D.dashLayout[w] = typeof v === 'number' ? {col:v, row:1, cs:_dlDef[w].cs, rs:_dlDef[w].rs} : _dlDef[w];
     if (!D.dashLayout[w].row) D.dashLayout[w].row = 1;
@@ -1045,7 +1363,7 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
   const r = { dashboard:renderDashboard, calendar:renderCalendar, schedule:renderSchedule,
-    progress:renderProgress, students:renderStudents, checklist:renderChecklist, memos:renderMemos };
+    progress:renderProgress, students:renderStudents, checklist:renderChecklist, memos:renderMemos, eisenhower:renderEisenhower };
   if (r[name]) r[name]();
 }
 document.querySelectorAll('.nav-item').forEach(el => el.addEventListener('click', () => showPage(el.dataset.page)));
@@ -1080,7 +1398,7 @@ function _dh(id) {
 }
 
 // 모바일 위젯 순서/높이 조절
-const WIDGET_ORDER = ['tasks','progress','records','secrets','dayplan','routine'];
+const WIDGET_ORDER = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals'];
 function _mwc(id) {
   return `<div class="mobile-widget-controls">
     <button class="mwc-btn" onclick="mwcMove('${id}',-1)">▲</button>
@@ -1188,20 +1506,20 @@ function renderDashboard() {
   const _catColors={general:'var(--text-lighter)',urgent:'var(--danger)',class:'var(--primary)',admin:'var(--warning)',student:'var(--success)'};
   const _catShort={general:'Gen',urgent:'Urg',class:'Cls',admin:'Adm',student:'Stu'};
   const tasksHtml = `<div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
-    <select id="dash-task-cat" class="form-input" style="width:auto;flex-shrink:0;">
-      <option value="general">General</option><option value="urgent">Urgent</option>
-      <option value="class">Class</option><option value="admin">Admin</option><option value="student">Student</option>
-    </select>
     <input type="text" id="dash-task-text" class="form-input" placeholder="Enter task..." style="flex:1;" onkeydown="if(event.key==='Enter')addDashTask()">
     <button class="btn btn-primary btn-sm" onclick="addDashTask()">Add</button>
   </div>
   ${pendingTasks.length ? pendingTasks.map(t=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer;" ondblclick="editTask('${t.id}')" title="Double-click to edit">
-      <div style="display:flex;flex-direction:column;align-items:center;width:42px;flex-shrink:0;">
-        <div style="font-size:12px;color:${_catColors[t.cat]||'var(--text-lighter)'};font-weight:700;line-height:1.3;">${_catShort[t.cat]||'Gen'}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;width:44px;flex-shrink:0;">
+        <div style="font-size:11px;color:var(--secondary);font-weight:700;line-height:1.3;">${t.startTime||'—'}</div>
+        ${t.endTime?`<div style="font-size:10px;color:var(--text-lighter);line-height:1.2;">${t.endTime}</div>`:''}
       </div>
       <div style="flex:1;font-size:13px;">
-        <div class="fw-600" style="color:var(--text);${t.done?'opacity:0.5;text-decoration:line-through;':''}">${t.title}</div>
+        <div style="display:flex;align-items:center;gap:5px;${t.done?'opacity:0.5;text-decoration:line-through;':''}">
+          <span class="fw-600" style="color:var(--text);">${t.title}</span>
+          <span class="ui-dots">${_urgencyDot(t.urgency)}${_importanceDot(t.importance)}</span>
+        </div>
         ${t.desc?`<div class="text-xs text-light" style="margin-top:3px;white-space:pre-line;">${t.desc}</div>`:''}
         ${t.note?`<div class="text-xs text-lighter" style="margin-top:2px;">${t.note}</div>`:''}
         ${t.steps&&t.steps.length?`<div style="margin-top:7px;padding-top:7px;border-top:1px solid var(--border);">
@@ -1235,9 +1553,7 @@ function renderDashboard() {
     </div>`;
   }).join('') : '<div class="empty"><div class="empty-text">No subjects</div></div>';
 
-  const todayPlans = (D.dayplan||[]).filter(p=>p.date===_dayplanViewDate).sort((a,b)=>(a.period||99)-(b.period||99));
-  const _periods = D.schedule.periods || 7;
-  const _periodOpts = Array.from({length:_periods},(_,i)=>`<option value="${i+1}">Period ${i+1}</option>`).join('');
+  const todayPlans = (D.dayplan||[]).filter(p=>p.date===_dayplanViewDate).sort(_sortByTime);
   const dayplanHtml = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:var(--radius-sm);">
     <button onclick="shiftDayplanDate(-1)" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:15px;padding:0 2px;line-height:1;">◀</button>
     <span style="flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--text);">${_dpLabel(_dayplanViewDate)}</span>
@@ -1246,15 +1562,15 @@ function renderDashboard() {
     ${_dayplanViewDate!==td?`<button onclick="_dayplanViewDate=todayStr();renderDashboard()" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 6px;">Today</button>`:''}
   </div>
   <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
-    <select id="dayplan-period" class="form-input" style="width:auto;flex-shrink:0;">${_periodOpts}</select>
+    ${_timeSelectHtml('dayplan-startTime')}${_timeSelectHtml('dayplan-endTime')}
     <input type="text" id="dayplan-text" class="form-input" placeholder="Enter task..." style="flex:1;" onkeydown="if(event.key==='Enter')addDayplanItem()">
     <button class="btn btn-primary btn-sm" onclick="addDayplanItem()">Add</button>
   </div>
-  ${todayPlans.length ? todayPlans.map(p=>{const pIdx=(p.period||1)-1;const pTime=D.schedule.times&&D.schedule.times[pIdx]?D.schedule.times[pIdx]:'';return `
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer;" ondblclick="editDayplanItem('${p.id}')" title="Double-click to edit">
-      <div style="display:flex;flex-direction:column;align-items:center;width:42px;flex-shrink:0;">
-        <div style="font-size:12px;color:var(--primary);font-weight:700;line-height:1.3;">P${p.period||'?'}</div>
-        ${pTime?`<div style="font-size:10px;color:var(--text-lighter);line-height:1.2;">${pTime}</div>`:''}
+  ${todayPlans.length ? todayPlans.map(p=>{const timeLabel=_dpTimeLabel(p);return `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer;border-left:2px solid var(--secondary);" ondblclick="editDayplanItem('${p.id}')" title="Double-click to edit">
+      <div style="display:flex;flex-direction:column;align-items:center;width:44px;flex-shrink:0;">
+        <div style="font-size:11px;color:var(--secondary);font-weight:700;line-height:1.3;">${timeLabel}</div>
+        <div class="ui-dots" style="margin-top:3px;">${_urgencyDot(p.urgency)}${_importanceDot(p.importance)}</div>
       </div>
       <div style="flex:1;font-size:13px;">
         <div class="fw-600" style="color:var(--text);${p.done?'opacity:0.5;text-decoration:line-through;':''}">${p.text}</div>
@@ -1364,6 +1680,61 @@ function renderDashboard() {
         <div class="widget-body">${routineHtml}</div>
       </div>
       ${_rh('routine')}
+    </div>
+    <div class="dash-widget" id="dw-eisenhower" style="grid-column:${L.eisenhower.cs} / span ${L.eisenhower.col};grid-row:${L.eisenhower.rs} / span ${L.eisenhower.row};">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" onclick="showPage('eisenhower')" style="cursor:pointer;">${_dh('eisenhower')}🎯 Eisenhower</div>${_mwc('eisenhower')}
+        </div>
+        <div class="widget-body">${(()=>{
+          const quads=[
+            {label:'Do',uf:u=>u<=2,imf:i=>i<=2},
+            {label:'Schedule',uf:u=>u>2,imf:i=>i<=2},
+            {label:'Delegate',uf:u=>u<=2,imf:i=>i>2},
+            {label:'Eliminate',uf:u=>u>2,imf:i=>i>2},
+          ];
+          return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${quads.map(q=>{
+            const all=(D.dayplan||[]).filter(p=>q.uf(p.urgency||3)&&q.imf(p.importance||3));
+            const shown=all.slice(0,3);const more=all.length-shown.length;
+            return `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:6px 8px;">
+              <div style="font-size:10px;font-weight:700;color:var(--text-light);margin-bottom:4px;">${q.label}</div>
+              ${shown.length?shown.map(p=>`<div style="font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:1px 0;${p.done?'opacity:0.5;text-decoration:line-through;':''}" title="${p.text}">${p.text}</div>`).join(''):'<div style="font-size:10px;color:var(--text-lighter);">—</div>'}
+              ${more?`<div style="font-size:10px;color:var(--text-lighter);margin-top:2px;">+${more} more</div>`:''}
+            </div>`;
+          }).join('')}</div>`;
+        })()}</div>
+      </div>
+      ${_rh('eisenhower')}
+    </div>
+    <div class="dash-widget" id="dw-manuals" style="grid-column:${L.manuals.cs} / span ${L.manuals.col};grid-row:${L.manuals.rs} / span ${L.manuals.row};">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">${_dh('manuals')}📎 메뉴얼 바로가기</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${_manualsEditMode ? `<button class="btn btn-primary btn-sm" onclick="_manualsExitEditMode()" style="font-size:11px;">완료</button>` : ''}
+            ${_mwc('manuals')}
+          </div>
+        </div>
+        <div class="widget-body">
+          ${(D.manuals||[]).length ? (D.manuals||[]).map((m,i)=>`
+            <div class="manual-item${_manualsEditMode?' manual-edit-shake':''}" data-idx="${i}" ${_manualsEditMode?'draggable="true"':''} style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:5px;">
+              ${_manualsEditMode?'<span style="font-size:12px;color:var(--text-lighter);flex-shrink:0;cursor:grab;">⠿</span>':''}
+              <a href="${m.url}" target="_blank" rel="noopener noreferrer" style="flex:1;font-size:13px;color:var(--primary);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${_manualsEditMode?'pointer-events:none;':''}" title="${m.title}">${m.title}</a>
+              ${_manualsEditMode?'':`<button onclick="_manualDeletePw(${i})" style="background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:16px;line-height:1;padding:0 2px;flex-shrink:0;" title="삭제">&#215;</button>`}
+            </div>`).join('') : '<div class="empty"><div class="empty-text">링크가 없습니다</div></div>'}
+          ${_manualsEditMode ? '' : `
+          <div id="manuals-add-form" style="display:none;margin-top:8px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);">
+            <input type="text" id="manuals-title-input" class="form-input" placeholder="제목" style="margin-bottom:6px;">
+            <input type="text" id="manuals-url-input" class="form-input" placeholder="URL" style="margin-bottom:8px;">
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-primary btn-sm" onclick="saveManualLink()">저장</button>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('manuals-add-form').style.display='none'">취소</button>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" onclick="var f=document.getElementById('manuals-add-form');f.style.display=f.style.display==='block'?'none':'block';" style="margin-top:8px;width:100%;font-size:12px;">+ 링크 추가</button>`}
+        </div>
+      </div>
+      ${_rh('manuals')}
     </div>`;
   renderSecrets();
 
@@ -1384,7 +1755,198 @@ function renderDashboard() {
       if (el) el.querySelector('.card').style.minHeight = h + 'px';
     });
   }
+  _initManualsWidget();
 }
+
+function saveManualLink() {
+  const title = document.getElementById('manuals-title-input').value.trim();
+  const url = document.getElementById('manuals-url-input').value.trim();
+  if (!title || !url) return;
+  if (!D.manuals) D.manuals = [];
+  D.manuals.push({title, url});
+  save();
+  renderDashboard();
+}
+function deleteManualLink(i) {
+  if (!D.manuals) return;
+  D.manuals.splice(i, 1);
+  save();
+  renderDashboard();
+}
+
+// ── 메뉴얼 삭제 비밀번호 ──
+let _manualDeleteIndex = -1;
+function _manualDeletePw(i) {
+  _manualDeleteIndex = i;
+  document.getElementById('manual-delete-pw').value = '';
+  document.getElementById('manual-delete-error').textContent = '';
+  openModal('manual-delete-modal');
+  setTimeout(() => { const el = document.getElementById('manual-delete-pw'); if(el) el.focus(); }, 100);
+}
+function _manualDeleteConfirm() {
+  if (document.getElementById('manual-delete-pw').value === '1225') {
+    closeModal('manual-delete-modal');
+    deleteManualLink(_manualDeleteIndex);
+  } else {
+    document.getElementById('manual-delete-error').textContent = '비밀번호가 틀렸습니다';
+    document.getElementById('manual-delete-pw').value = '';
+    document.getElementById('manual-delete-pw').focus();
+  }
+}
+
+// ── 메뉴얼 편집 모드 (롱프레스 + 드래그 재정렬) ──
+let _manualsEditMode = false;
+function _manualsEnterEditMode() { _manualsEditMode = true; renderDashboard(); }
+function _manualsExitEditMode() { _manualsEditMode = false; renderDashboard(); }
+
+function _initManualsWidget() {
+  const widget = document.getElementById('dw-manuals');
+  if (!widget) return;
+
+  // Long press to enter edit mode
+  let _lpTimer = null;
+  const _startLp = () => {
+    if (_manualsEditMode) return;
+    _lpTimer = setTimeout(_manualsEnterEditMode, 1500);
+  };
+  const _cancelLp = () => { if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; } };
+  widget.addEventListener('mousedown', _startLp);
+  widget.addEventListener('mouseup', _cancelLp);
+  widget.addEventListener('mouseleave', _cancelLp);
+  widget.addEventListener('touchstart', _startLp, {passive: true});
+  widget.addEventListener('touchend', _cancelLp);
+  widget.addEventListener('touchmove', _cancelLp, {passive: true});
+
+  if (!_manualsEditMode) return;
+
+  // Click outside widget exits edit mode
+  setTimeout(() => {
+    const _outsideHandler = (e) => {
+      if (widget && !widget.contains(e.target)) {
+        document.removeEventListener('mousedown', _outsideHandler);
+        document.removeEventListener('touchstart', _outsideHandler);
+        _manualsExitEditMode();
+      }
+    };
+    document.addEventListener('mousedown', _outsideHandler);
+    document.addEventListener('touchstart', _outsideHandler, {passive: true});
+  }, 50);
+
+  // Desktop HTML5 drag-and-drop reorder
+  const items = widget.querySelectorAll('.manual-item[draggable]');
+  let _dragSrcIdx = -1;
+  items.forEach(item => {
+    item.addEventListener('dragstart', (e) => {
+      _dragSrcIdx = parseInt(item.dataset.idx);
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => { item.style.opacity = '0.4'; }, 0);
+    });
+    item.addEventListener('dragend', () => {
+      item.style.opacity = '';
+      items.forEach(i => i.classList.remove('manual-drag-over'));
+    });
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      items.forEach(i => i.classList.remove('manual-drag-over'));
+      item.classList.add('manual-drag-over');
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('manual-drag-over'));
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      item.classList.remove('manual-drag-over');
+      const destIdx = parseInt(item.dataset.idx);
+      if (_dragSrcIdx < 0 || _dragSrcIdx === destIdx) return;
+      const arr = D.manuals;
+      const [moved] = arr.splice(_dragSrcIdx, 1);
+      arr.splice(destIdx, 0, moved);
+      save(); renderDashboard();
+    });
+  });
+
+  // Mobile touch drag reorder
+  let _touchSrcIdx = -1;
+  items.forEach(item => {
+    item.addEventListener('touchstart', () => {
+      _touchSrcIdx = parseInt(item.dataset.idx);
+    }, {passive: true});
+    item.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0];
+      const el = document.elementFromPoint(t.clientX, t.clientY);
+      const destItem = el && el.closest('.manual-item[draggable]');
+      if (destItem && _touchSrcIdx >= 0) {
+        const destIdx = parseInt(destItem.dataset.idx);
+        if (_touchSrcIdx !== destIdx) {
+          const arr = D.manuals;
+          const [moved] = arr.splice(_touchSrcIdx, 1);
+          arr.splice(destIdx, 0, moved);
+          save(); renderDashboard(); return;
+        }
+      }
+      _touchSrcIdx = -1;
+    });
+  });
+}
+
+function _dashSearch(q){
+  const dd=document.getElementById('dash-search-dropdown');
+  if(!dd)return;
+  if(!q||!q.trim()){dd.style.display='none';return;}
+  const qLow=q.toLowerCase();
+  const results=[];
+  function score(item,type,id,title,date,desc,note,steps){
+    let s=0;
+    if((title||'').toLowerCase().includes(qLow))s+=3;
+    if((steps||[]).some(st=>(st.text||'').toLowerCase().includes(qLow)))s+=2;
+    if([(desc||''),(note||'')].some(f=>f.toLowerCase().includes(qLow)))s+=1;
+    if(s>0)results.push({type,id,title,date,score:s});
+  }
+  (D.dayplan||[]).forEach(p=>score(p,'dayplan',p.id,p.text,p.date,p.desc,p.note,p.steps));
+  (D.tasks||[]).forEach(t=>score(t,'task',t.id,t.title,t.startTime||'',t.desc,t.note,t.steps));
+  (D.records||[]).forEach(r=>{
+    const s=D.students.find(x=>x.id===r.studentId);
+    let sc=0;
+    if((r.content||'').toLowerCase().includes(qLow))sc+=1;
+    if(sc>0)results.push({type:'record',id:r.id,studentId:r.studentId,title:r.content.slice(0,40),date:r.date,score:sc});
+  });
+  results.sort((a,b)=>b.score-a.score);
+  const shown=results.slice(0,8);
+  if(!shown.length){dd.style.display='none';return;}
+  const icons={dayplan:'📅',task:'📋',record:'📝'};
+  const labels={dayplan:'일과',task:'작업',record:'기록'};
+  dd.innerHTML=shown.map(r=>`
+    <div onclick="_dashSearchClick('${r.type}','${r.id}'${r.studentId?`,'${r.studentId}'`:''})" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <span style="font-size:16px;">${icons[r.type]||''}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);">${r.title||''}</div>
+        <div style="font-size:11px;color:var(--text-lighter);">${r.date||''} · ${labels[r.type]||''}</div>
+      </div>
+    </div>`).join('');
+  dd.style.display='block';
+}
+function _dashSearchClick(type,id,studentId){
+  const dd=document.getElementById('dash-search-dropdown');
+  if(dd)dd.style.display='none';
+  const inp=document.getElementById('dash-search-input');
+  if(inp)inp.value='';
+  if(type==='dayplan')editDayplanItem(id);
+  else if(type==='task')editTask(id);
+  else if(type==='record'&&studentId){showStuDetail(studentId);setTimeout(()=>openRecModal&&openRecModal(),100);}
+}
+document.addEventListener('click',function(e){
+  const wrap=document.getElementById('dash-search-wrap');
+  if(wrap&&!wrap.contains(e.target)){
+    const dd=document.getElementById('dash-search-dropdown');
+    if(dd)dd.style.display='none';
+  }
+});
+
+function _syncDashSearchWidth() {
+  const title = document.getElementById('dash-title-block');
+  const wrap = document.getElementById('dash-search-wrap');
+  if (title && wrap) wrap.style.width = (title.offsetWidth * 2) + 'px';
+}
+window.addEventListener('resize', _syncDashSearchWidth);
 
 // ── EVENTS ──
 let viewingEventId = null;
@@ -1393,19 +1955,22 @@ function saveEvent() {
   if (!title) { alert('Please enter a title'); return; }
   const editId = document.getElementById('event-edit-id').value;
   if (editId) {
-    const ev = D.events.find(e=>e.id===editId);
-    if (ev) { ev.title=title; ev.date=document.getElementById('evt-date').value; ev.time=document.getElementById('evt-time').value; ev.type=document.getElementById('evt-type').value; ev.desc=document.getElementById('evt-desc').value.trim(); }
+    const p = D.dayplan.find(p=>p.id===editId);
+    if (p) { p.text=title; p.date=document.getElementById('evt-date').value; p.startTime=_getTimeSelect('evt-time'); p.endTime=_getTimeSelect('evt-end-time')||''; p.desc=document.getElementById('evt-desc').value.trim(); p.urgency=_dialValues['evt_urgency']||3; p.importance=_dialValues['evt_importance']||3; }
   } else {
-    D.events.push({ id:uid(), title, date:document.getElementById('evt-date').value, time:document.getElementById('evt-time').value, type:document.getElementById('evt-type').value, desc:document.getElementById('evt-desc').value.trim() });
+    D.dayplan.push({ id:uid(), text:title, date:document.getElementById('evt-date').value, startTime:_getTimeSelect('evt-time'), endTime:_getTimeSelect('evt-end-time')||'', done:false, desc:document.getElementById('evt-desc').value.trim(), note:'', steps:[], urgency:_dialValues['evt_urgency']||3, importance:_dialValues['evt_importance']||3 });
   }
   save(); closeModal('event-modal'); clearEventForm();
   renderCalendar();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
 function clearEventForm() {
-  ['evt-title','evt-time','evt-desc'].forEach(id=>document.getElementById(id).value='');
+  ['evt-title','evt-desc'].forEach(id=>document.getElementById(id).value='');
+  _setTimeSelect('evt-time',''); _setTimeSelect('evt-end-time','');
   document.getElementById('event-edit-id').value='';
   document.getElementById('event-modal-title').textContent='Add Event';
+  renderDialUI('evt-urgency-dial','evt',3,'urgency');
+  renderDialUI('evt-importance-dial','evt',3,'importance');
 }
 function showEvtDetail(id) {
   viewingEventId = id;
@@ -1429,10 +1994,13 @@ function editEvent() {
   document.getElementById('event-edit-id').value = e.id;
   document.getElementById('evt-title').value = e.title;
   document.getElementById('evt-date').value = e.date;
-  document.getElementById('evt-time').value = e.time||'';
+  _setTimeSelect('evt-time', e.time||'');
+  _setTimeSelect('evt-end-time', e.end_time||'');
   document.getElementById('evt-type').value = e.type||'school';
   document.getElementById('evt-desc').value = e.desc||'';
   document.getElementById('event-modal-title').textContent = 'Edit Event';
+  renderDialUI('evt-urgency-dial','evt',e.urgency||3,'urgency');
+  renderDialUI('evt-importance-dial','evt',e.importance||3,'importance');
   closeModal('evt-detail-modal'); openModal('event-modal');
 }
 function openEditEvent(id) {
@@ -1440,10 +2008,13 @@ function openEditEvent(id) {
   document.getElementById('event-edit-id').value = e.id;
   document.getElementById('evt-title').value = e.title;
   document.getElementById('evt-date').value = e.date;
-  document.getElementById('evt-time').value = e.time||'';
+  _setTimeSelect('evt-time', e.time||'');
+  _setTimeSelect('evt-end-time', e.end_time||'');
   document.getElementById('evt-type').value = e.type||'school';
   document.getElementById('evt-desc').value = e.desc||'';
   document.getElementById('event-modal-title').textContent = 'Edit Event';
+  renderDialUI('evt-urgency-dial','evt',e.urgency||3,'urgency');
+  renderDialUI('evt-importance-dial','evt',e.importance||3,'importance');
   openModal('event-modal');
 }
 function toggleEventDone(id) {
@@ -1454,14 +2025,19 @@ function toggleEventDone(id) {
 }
 async function deleteEventById(id){if(!await confirmDelete('This event')) return;D.events=D.events.filter(e=>e.id!==id);save();renderDashboard();}
 function addDayplanItem(){
-  const period=parseInt(document.getElementById('dayplan-period').value)||1;
+  const startTime=_getTimeSelect('dayplan-startTime');
+  const endTime=_getTimeSelect('dayplan-endTime');
   const text=document.getElementById('dayplan-text').value.trim();
   if(!text) return;
-  D.dayplan.push({id:uid(),date:_dayplanViewDate,period,text,done:false});
+  D.dayplan.push({id:uid(),date:_dayplanViewDate,startTime,endTime,text,done:false,desc:'',note:'',steps:[],urgency:3,importance:3});
   save(); renderDashboard();
 }
 function toggleDayplanItem(id){const p=D.dayplan.find(x=>x.id===id);if(!p)return;p.done=!p.done;save();renderDashboard();}
 async function deleteDayplanItem(id){if(!await confirmDelete('This day plan item')) return;D.dayplan=D.dayplan.filter(x=>x.id!==id);save();renderDashboard();}
+async function _dpDeleteWeekly(id){if(!await confirmDelete('This day plan item'))return;D.dayplan=D.dayplan.filter(x=>x.id!==id);save();renderWeekly();}
+let _dpBlockDragId=null;
+function _dpBlockDragStart(e,id){_dpBlockDragId=id;e.dataTransfer.setData('text/plain',id);}
+function _dpDurationMin(p){if(!p.startTime||!p.endTime)return 0;const[sh,sm]=p.startTime.split(':').map(Number);const[eh,em]=p.endTime.split(':').map(Number);return(eh*60+em)-(sh*60+sm);}
 let editingDayplanId=null, _editSteps=[];
 function renderDayplanStepList(){
   const el=document.getElementById('dayplan-step-list');if(!el)return;
@@ -1480,24 +2056,30 @@ function addDayplanStep(){
 function editDayplanItem(id){
   const p=D.dayplan.find(x=>x.id===id);if(!p)return;
   editingDayplanId=id;
-  const _periods=D.schedule.periods||7;
-  document.getElementById('dayplan-edit-period').innerHTML=Array.from({length:_periods},(_,i)=>`<option value="${i+1}"${p.period===i+1?' selected':''}>Period ${i+1}</option>`).join('');
+  _setTimeSelect('dayplan-edit-startTime', p.startTime||p.time||'');
+  _setTimeSelect('dayplan-edit-endTime', p.endTime||'');
   document.getElementById('dayplan-edit-text').value=p.text;
   document.getElementById('dayplan-edit-desc').value=p.desc||'';
   document.getElementById('dayplan-edit-note').value=p.note||'';
   _editSteps=(p.steps||[]).map(s=>({...s}));
   renderDayplanStepList();
+  renderDialUI('dayplan-urgency-dial','dayplan',p.urgency||3,'urgency');
+  renderDialUI('dayplan-importance-dial','dayplan',p.importance||3,'importance');
   openModal('dayplan-edit-modal');
 }
 function saveDayplanEdit(){
   const p=D.dayplan.find(x=>x.id===editingDayplanId);if(!p)return;
   const text=document.getElementById('dayplan-edit-text').value.trim();if(!text)return;
-  p.period=parseInt(document.getElementById('dayplan-edit-period').value)||1;
+  p.startTime=_getTimeSelect('dayplan-edit-startTime');
+  p.endTime=_getTimeSelect('dayplan-edit-endTime');
   p.text=text;
   p.desc=document.getElementById('dayplan-edit-desc').value.trim();
   p.note=document.getElementById('dayplan-edit-note').value.trim();
   p.steps=_editSteps;
+  p.urgency=_dialValues['dayplan_urgency']||3;
+  p.importance=_dialValues['dayplan_importance']||3;
   save();closeModal('dayplan-edit-modal');renderDashboard();
+  if(document.getElementById('page-calendar').classList.contains('active')&&calView==='weekly') renderWeekly();
 }
 let editingTaskId=null, _taskEditSteps=[];
 function renderTaskStepList(){
@@ -1517,22 +2099,24 @@ function addTaskStep(){
 function editTask(id){
   const t=D.tasks.find(x=>x.id===id);if(!t)return;
   editingTaskId=id;
-  document.getElementById('task-edit-cat').value=t.cat||'general';
   document.getElementById('task-edit-text').value=t.title;
   document.getElementById('task-edit-desc').value=t.desc||'';
   document.getElementById('task-edit-note').value=t.note||'';
   _taskEditSteps=(t.steps||[]).map(s=>({...s}));
   renderTaskStepList();
+  renderDialUI('task-urgency-dial','task',t.urgency||3,'urgency');
+  renderDialUI('task-importance-dial','task',t.importance||3,'importance');
   openModal('task-edit-modal');
 }
 function saveTaskEdit(){
   const t=D.tasks.find(x=>x.id===editingTaskId);if(!t)return;
   const text=document.getElementById('task-edit-text').value.trim();if(!text)return;
-  t.cat=document.getElementById('task-edit-cat').value;
   t.title=text;
   t.desc=document.getElementById('task-edit-desc').value.trim();
   t.note=document.getElementById('task-edit-note').value.trim();
   t.steps=_taskEditSteps;
+  t.urgency=_dialValues['task_urgency']||3;
+  t.importance=_dialValues['task_importance']||3;
   save();closeModal('task-edit-modal');renderDashboard();
 }
 function toggleTaskStep(taskId,stepId){
@@ -1543,7 +2127,7 @@ function toggleTaskStep(taskId,stepId){
 function moveTasksToDayplan(){
   const toMove=D.tasks.filter(t=>t.done);
   if(!toMove.length)return;
-  toMove.forEach(t=>{D.dayplan.push({id:uid(),date:_dayplanViewDate,period:null,text:t.title,done:false,desc:'',note:'',steps:[]});});
+  toMove.forEach(t=>{D.dayplan.push({id:uid(),date:_dayplanViewDate,startTime:t.startTime||'',endTime:t.endTime||'',text:t.title,done:t.done,desc:t.desc||'',note:t.note||'',steps:(t.steps||[]).map(s=>({...s})),urgency:t.urgency||3,importance:t.importance||3});});
   D.tasks=D.tasks.filter(t=>!t.done);
   save();renderDashboard();
 }
@@ -1551,7 +2135,7 @@ function moveDayplanToTasks(){
   const vd=_dayplanViewDate;
   const toMove=(D.dayplan||[]).filter(p=>p.date===vd && p.done);
   if(!toMove.length)return;
-  toMove.forEach(p=>{D.tasks.push({id:uid(),title:p.text,cat:'',date:'',done:false,desc:p.desc||'',note:p.note||'',steps:(p.steps||[]).map(s=>({...s,done:false}))});});
+  toMove.forEach(p=>{D.tasks.push({id:uid(),title:p.text,startTime:p.startTime||p.time||'',endTime:p.endTime||'',date:p.date||'',done:p.done,desc:p.desc||'',note:p.note||'',steps:(p.steps||[]).map(s=>({...s})),urgency:p.urgency||3,importance:p.importance||3});});
   D.dayplan=D.dayplan.filter(p=>!(p.date===vd && p.done));
   save();renderDashboard();
 }
@@ -1613,13 +2197,10 @@ function renderMonthly() {
     const ds=`${calYear}-${p2(calMonth+1)}-${p2(d)}`;
     const dd=new Date(calYear,calMonth,d);
     const sun=dd.getDay()===0, sat=dd.getDay()===6;
-    const evs=D.events.filter(e=>e.date===ds);
-    const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort((a,b)=>(a.period||99)-(b.period||99));
+    const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort(_sortByTime);
     html+=`<div class="cal-day ${isToday(dd)?'is-today':''} ${ds===_dayplanViewDate?'is-selected':''}" onclick="calDayClick('${ds}')">
       <div class="day-num" style="${sun?'color:var(--danger)':sat?'color:var(--primary)':''}">${d}</div>
-      ${evs.slice(0,2).map(e=>`<div class="day-evt evt-${e.type}" onclick="event.stopPropagation();showEvtDetail('${e.id}')" title="${e.title}">${e.title}</div>`).join('')}
-      ${evs.length>2?`<div class="text-xs text-lighter">+${evs.length-2} more</div>`:''}
-      ${plans.slice(0,2).map(p=>`<div style="font-size:10px;color:var(--secondary);background:rgba(0,180,120,0.08);padding:1px 4px;border-radius:3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.text}">P${p.period||'?'} ${p.text}</div>`).join('')}
+      ${plans.slice(0,2).map(p=>`<div style="font-size:10px;color:var(--secondary);background:rgba(0,180,120,0.08);padding:1px 4px;border-radius:3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.text}">${_dpTimeLabel(p)} ${p.text}</div>`).join('')}
       ${plans.length>2?`<div class="text-xs text-lighter">+${plans.length-2} tasks</div>`:''}
     </div>`;
   }
@@ -1641,66 +2222,304 @@ function setDayplanDate(ds){
   else renderMonthly();
 }
 function renderWeekly() {
+  const START_H=7, END_H=20;
+  const TOTAL_SLOTS=(END_H-START_H+1)*12; // 168 (07:00~20:55)
+  const SH=12; // slot height px
+
   const we=new Date(calWeekOf); we.setDate(we.getDate()+6);
   document.getElementById('cal-week-title').textContent=`${fmtDate(calWeekOf)} ~ ${fmtDate(we)}`;
-  const hours=Array.from({length:14},(_,i)=>i+7);
-  let html=`<div class="cal-week-grid">`;
-  html+='<div class="week-col-hdr" style="font-size:10px;color:var(--secondary);font-weight:600;">Plan</div>';
-  for(let d=0;d<7;d++) {
-    const dd=new Date(calWeekOf); dd.setDate(dd.getDate()+d);
-    const isT=isToday(dd), ds=fmtDate(dd), isSel=ds===_dayplanViewDate;
-    html+=`<div class="week-col-hdr ${isT?'today-col':''} ${isSel?'is-selected':''}" style="${d===0?'color:var(--danger)':d===6?'color:var(--primary)':''};cursor:pointer;" onclick="setDayplanDate('${ds}')" title="Set as Today's Schedule">${DAYS_KO[d]}<br><span style="font-size:10px;font-weight:400;">${dd.getDate()}</span>${isSel?'<br><span style="font-size:9px;color:var(--secondary);">📅</span>':''}</div>`;
-  }
-  // Dayplan row
-  html+='<div class="week-time-lbl" style="font-size:9px;font-weight:600;color:var(--secondary);display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 6px 0;min-height:auto;border-bottom:1px solid var(--border);border-right:1px solid var(--border);">📋</div>';
+
+  const days=[];
   for(let d=0;d<7;d++){
     const dd=new Date(calWeekOf); dd.setDate(dd.getDate()+d);
-    const ds=fmtDate(dd), isSel=ds===_dayplanViewDate;
-    const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort((a,b)=>(a.period||99)-(b.period||99));
-    html+=`<div style="background:${isSel?'rgba(5,150,105,0.05)':'var(--surface)'};min-height:28px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:3px;cursor:pointer;" onclick="setDayplanDate('${ds}')">
-      ${plans.slice(0,3).map(p=>`<div style="font-size:9.5px;color:var(--secondary);background:rgba(5,150,105,0.1);padding:1px 4px;border-radius:3px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${p.done?'opacity:0.5;text-decoration:line-through;':''}" title="${p.text}">P${p.period||'?'} ${p.text}</div>`).join('')}
+    const ds=fmtDate(dd);
+    days.push({dd,ds,d,isT:isToday(dd),isSel:ds===_dayplanViewDate});
+  }
+  const weekDates=days.map(x=>x.ds);
+
+  // ── Unscheduled items ──
+  const unschTasks=D.tasks.filter(t=>!t.done&&(!t.date||weekDates.includes(t.date)));
+  const unschPlans=(D.dayplan||[]).filter(p=>weekDates.includes(p.date)&&!_getDpTime(p));
+
+  let html=`<div style="min-width:580px;">`;
+
+  // ── Unscheduled panel ──
+  if(unschTasks.length||unschPlans.length){
+    html+=`<div class="unscheduled-panel">
+      <div class="unscheduled-panel-hdr">📌 Unscheduled</div>
+      <div class="unscheduled-panel-inner">`;
+    unschTasks.forEach(t=>{
+      html+=`<div class="unscheduled-chip" draggable="true" ondragstart="onUnscheduledDragStart(event,'${t.id}','task')">${_urgencyDot(t.urgency)}${_importanceDot(t.importance)} ${t.title}</div>`;
+    });
+    unschPlans.forEach(p=>{
+      html+=`<div class="unscheduled-chip" draggable="true" ondragstart="onUnscheduledDragStart(event,'${p.id}','dayplan')">${_urgencyDot(p.urgency)}${_importanceDot(p.importance)} ${p.text}</div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  // ── Header row ──
+  html+=`<div style="display:grid;grid-template-columns:52px repeat(7,1fr);border:1px solid var(--border);${!(unschTasks.length||unschPlans.length)?'border-radius:var(--radius-sm) var(--radius-sm) 0 0;':''}overflow:hidden;">`;
+  html+=`<div class="week-col-hdr" style="font-size:10px;color:var(--secondary);font-weight:600;">Plan</div>`;
+  days.forEach(({dd,ds,d,isT,isSel})=>{
+    html+=`<div class="week-col-hdr ${isT?'today-col':''} ${isSel?'is-selected':''}" style="${d===0?'color:var(--danger)':d===6?'color:var(--primary)':''};cursor:pointer;" onclick="setDayplanDate('${ds}')" title="Set as Today's Schedule">${DAYS_KO[d]}<br><span style="font-size:10px;font-weight:400;">${dd.getDate()}</span>${isSel?'<br><span style="font-size:9px;color:var(--secondary);">📅</span>':''}</div>`;
+  });
+  html+=`</div>`;
+
+  // ── Dayplan row — only items WITHOUT time ──
+  html+=`<div style="display:grid;grid-template-columns:52px repeat(7,1fr);border:1px solid var(--border);border-top:none;">`;
+  html+=`<div style="background:var(--bg);font-size:9px;font-weight:600;color:var(--secondary);display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 6px 0;border-right:1px solid var(--border);">📋</div>`;
+  days.forEach(({ds,isSel})=>{
+    const plans=(D.dayplan||[]).filter(p=>p.date===ds&&!_getDpTime(p)).sort(_sortByTime);
+    html+=`<div style="background:${isSel?'rgba(5,150,105,0.05)':'var(--surface)'};min-height:28px;border-right:1px solid var(--border);padding:3px;cursor:pointer;" onclick="setDayplanDate('${ds}')">
+      ${plans.slice(0,3).map(p=>`<div style="font-size:9.5px;color:var(--secondary);background:rgba(5,150,105,0.1);padding:1px 4px;border-radius:3px;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${p.done?'opacity:0.5;text-decoration:line-through;':''}" title="${p.text}">${p.text}</div>`).join('')}
       ${plans.length>3?`<div style="font-size:9px;color:var(--text-lighter);">+${plans.length-3} more</div>`:''}
       ${!plans.length?'<div style="font-size:9px;color:var(--text-lighter);text-align:center;padding:4px 0;">—</div>':''}
     </div>`;
-  }
-  hours.forEach(h=>{
-    html+=`<div class="week-time-lbl">${p2(h)}:00</div>`;
-    for(let d=0;d<7;d++){
-      const dd=new Date(calWeekOf); dd.setDate(dd.getDate()+d);
-      const ds=fmtDate(dd), isT=isToday(dd);
-      const evs=D.events.filter(e=>e.date===ds&&e.time&&parseInt(e.time.split(':')[0])===h);
-      html+=`<div class="week-slot ${isT?'today-col':''}" onclick="openEvtOnDay('${ds}','${p2(h)}:00')">
-        ${evs.map(e=>`<div class="slot-evt" onclick="event.stopPropagation();showEvtDetail('${e.id}')">${e.title}</div>`).join('')}
-      </div>`;
-    }
   });
-  html+='</div>';
+  html+=`</div>`;
+
+  // ── Time + Slots body ──
+  html+=`<div style="display:flex;border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius-sm) var(--radius-sm);overflow:hidden;">`;
+
+  // Time label column
+  html+=`<div style="width:52px;flex-shrink:0;background:var(--bg);border-right:1px solid var(--border);">`;
+  for(let s=0;s<TOTAL_SLOTS;s++){
+    const m5=s*5, h=START_H+Math.floor(m5/60), m=m5%60;
+    const isHour=m===0, isHalf=m===30;
+    html+=`<div style="height:${SH}px;text-align:right;padding-right:6px;box-sizing:border-box;${isHour?'border-top:1px solid var(--border);':isHalf?'border-top:1px dashed var(--border);':''}">`;
+    if(isHour) html+=`<span style="font-size:9.5px;color:var(--text-lighter);line-height:1;vertical-align:top;">${p2(h)}:00</span>`;
+    html+=`</div>`;
+  }
+  html+=`</div>`;
+
+  // Day columns
+  html+=`<div style="flex:1;display:flex;">`;
+
+  days.forEach(({ds,d,isT})=>{
+    // Dayplan items WITH time for this day
+    const dpItems=(D.dayplan||[]).filter(p=>p.date===ds&&_getDpTime(p));
+    html+=`<div class="week-day-col" data-day="${d}" data-date="${ds}" style="flex:1;position:relative;${isT?'background:rgba(26,86,219,0.025)':'background:var(--surface)'}${d<6?';border-right:1px solid var(--border)':''}">`;
+
+    // 5-min slot divs
+    for(let s=0;s<TOTAL_SLOTS;s++){
+      const m5=s*5, h=START_H+Math.floor(m5/60), m=m5%60;
+      const timeStr=`${p2(h)}:${p2(m)}`;
+      const isHour=m===0, isHalf=m===30;
+      html+=`<div class="week-slot-5m" data-slot="${s}" data-time="${timeStr}" data-date="${ds}" style="height:${SH}px;box-sizing:border-box;${isHour?'border-top:1px solid var(--border);':isHalf?'border-top:1px dashed rgba(0,0,0,0.06);':''}"></div>`;
+    }
+
+    // Dayplan blocks (absolute, green left border)
+    dpItems.forEach(p=>{
+      const startStr = p.startTime || p.time || '';
+      const endStr   = p.endTime   || '';
+      const [ph,pm]  = startStr.split(':').map(Number);
+      const ss       = Math.max(0,(ph-START_H)*12+Math.floor(pm/5));
+      const top      = ss*SH;
+      let height;
+      if (endStr) {
+        const [eh,em] = endStr.split(':').map(Number);
+        const es = Math.max(0,(eh-START_H)*12+Math.floor(em/5));
+        height = Math.max((es-ss)*SH, SH);
+      } else {
+        height = SH*6; // fallback: 30min if no endTime
+      }
+      const urgBorder=_URG_COLORS[(p.urgency||3)-1];
+      const impBorder=_IMP_COLORS[(p.importance||3)-1];
+      html+=`<div class="week-dayplan-block" onclick="event.stopPropagation();editDayplanItem('${p.id}')" style="top:${top}px;height:${height}px;left:1%;width:97%;border-top:2px solid ${urgBorder};border-left:2px solid ${impBorder};" title="${p.text}">
+        <div style="display:flex;align-items:flex-start;gap:2px;">
+          <span draggable="true" ondragstart="event.stopPropagation();_dpBlockDragStart(event,'${p.id}')" style="cursor:grab;font-size:11px;opacity:0.5;flex-shrink:0;line-height:1.2;">⠿</span>
+          <div style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">${startStr}${endStr ? '–'+endStr : ''} ${p.text}</div>
+          <button onclick="event.stopPropagation();_dpDeleteWeekly('${p.id}')" style="background:none;border:none;cursor:pointer;font-size:10px;color:inherit;opacity:0.7;padding:0;line-height:1;flex-shrink:0;">✕</button>
+        </div>
+      </div>`;
+    });
+
+    html+=`</div>`;
+  });
+
+  html+=`</div></div></div>`;
   document.getElementById('cal-week-grid').innerHTML=html;
+  _initWeeklyInteractions();
 }
+
+function _layoutWeekEvents(evs,startH,slotH){
+  if(!evs.length) return [];
+  function t2s(t){
+    if(!t) return 0;
+    const p=t.split(':'); const h=parseInt(p[0])||0; const m=parseInt(p[1])||0;
+    return (h-startH)*12+Math.floor(m/5);
+  }
+  const items=evs.map(e=>{
+    const ss=Math.max(0,t2s(e.time));
+    const es=e.end_time?Math.max(ss+1,t2s(e.end_time)):ss+12;
+    return{e,ss,es,top:ss*slotH,height:Math.max((es-ss)*slotH,slotH),col:0};
+  }).sort((a,b)=>a.ss-b.ss);
+  // Greedy column assignment
+  const colEnds=[];
+  for(const it of items){
+    let placed=false;
+    for(let c=0;c<colEnds.length;c++){
+      if(colEnds[c]<=it.ss){it.col=c;colEnds[c]=it.es;placed=true;break;}
+    }
+    if(!placed){it.col=colEnds.length;colEnds.push(it.es);}
+  }
+  const nCols=colEnds.length||1;
+  const cw=100/nCols;
+  return items.map(it=>({e:it.e,top:it.top,height:it.height,left:it.col*cw,width:cw-0.5}));
+}
+
+// ── UNSCHEDULED DRAG & DROP ──
+let _unscheduledDrop={id:null,source:null};
+function onUnscheduledDragStart(e,id,source){
+  e.dataTransfer.setData('text/plain',JSON.stringify({id,source}));
+  _unscheduledDrop.id=id; _unscheduledDrop.source=source;
+}
+function confirmUnscheduledDrop(){
+  const date=document.getElementById('unscheduled-drop-date').value;
+  const time=_getTimeSelect('unscheduled-drop-time');
+  if(!date||!time){alert('Please select date and time');return;}
+  const conflict=_checkConflict(date,time,null);
+  if(conflict){
+    const el=document.getElementById('unscheduled-drop-conflict');
+    el.textContent='⚠️ This time overlaps with an existing item. Please choose a different time.';
+    el.style.display='block';
+    return;
+  }
+  const{id,source}=_unscheduledDrop;
+  if(source==='task'){
+    const t=D.tasks.find(x=>x.id===id); if(!t) return;
+    D.dayplan.push({id:uid(),date,time,text:t.title,done:false,desc:t.desc||'',note:t.note||'',steps:(t.steps||[]).map(s=>({...s,done:false})),urgency:t.urgency||3,importance:t.importance||3});
+    D.tasks=D.tasks.filter(x=>x.id!==id);
+  } else if(source==='dayplan'){
+    const p=D.dayplan.find(x=>x.id===id); if(!p) return;
+    p.date=date; p.time=time;
+  }
+  save();
+  closeModal('unscheduled-drop-modal');
+  renderWeekly();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+}
+
+// Weekly drag & tooltip — document listeners registered once
+let _wDrag=null, _wDragOv=null;
+(function(){
+  let _ttEl=null;
+  function getTT(){
+    if(!_ttEl){
+      _ttEl=document.createElement('div');
+      _ttEl.id='_wtt';
+      _ttEl.style.cssText='position:fixed;background:var(--text);color:#fff;border-radius:4px;font-size:11px;padding:3px 7px;pointer-events:none;z-index:9999;display:none;white-space:nowrap;';
+      document.body.appendChild(_ttEl);
+    }
+    return _ttEl;
+  }
+  function slotToTime(s){
+    const m5=s*5,h=7+Math.floor(m5/60),m=m5%60;
+    return p2(h)+':'+p2(m);
+  }
+  function updateOv(){
+    if(!_wDrag||!_wDragOv) return;
+    const s0=Math.min(_wDrag.s0,_wDrag.s1), s1=Math.max(_wDrag.s0,_wDrag.s1)+1;
+    _wDragOv.style.top=(s0*12)+'px'; _wDragOv.style.height=((s1-s0)*12)+'px'; _wDragOv.style.display='block';
+  }
+  document.addEventListener('mousemove',e=>{
+    if(!_wDrag) return;
+    const slot=e.target&&e.target.closest&&e.target.closest('.week-slot-5m');
+    if(slot){const ns=parseInt(slot.dataset.slot);if(_wDrag.s1!==ns){_wDrag.s1=ns;updateOv();}}
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!_wDrag) return;
+    const d=_wDrag; _wDrag=null;
+    if(_wDragOv){_wDragOv.style.display='none';}
+    getTT().style.display='none';
+    const s0=Math.min(d.s0,d.s1), s1=Math.max(d.s0,d.s1)+1;
+    clearEventForm();
+    document.getElementById('evt-date').value=d.date;
+    _setTimeSelect('evt-time', slotToTime(s0));
+    _setTimeSelect('evt-end-time', slotToTime(s1));
+    openModal('event-modal');
+  });
+  window._initWeeklyInteractions=function(){
+    const tt=getTT();
+    document.querySelectorAll('.week-day-col').forEach(col=>{
+      col.addEventListener('mousemove',e=>{
+        if(_wDrag){tt.style.display='none';return;}
+        const slot=e.target.closest&&e.target.closest('.week-slot-5m');
+        if(!slot){tt.style.display='none';return;}
+        tt.textContent=slot.dataset.time;
+        tt.style.display='block';
+        tt.style.left=(e.clientX+14)+'px';
+        tt.style.top=(e.clientY-28)+'px';
+      });
+      col.addEventListener('mouseleave',()=>{tt.style.display='none';});
+      col.addEventListener('mousedown',e=>{
+        const slot=e.target.closest&&e.target.closest('.week-slot-5m');
+        if(!slot||e.button!==0) return;
+        e.preventDefault();
+        tt.style.display='none';
+        if(_wDragOv&&_wDragOv.parentNode) _wDragOv.parentNode.removeChild(_wDragOv);
+        _wDragOv=document.createElement('div');
+        _wDragOv.style.cssText='position:absolute;left:0;right:0;background:var(--primary-dim2);border:1px solid var(--primary);pointer-events:none;z-index:4;border-radius:2px;display:none;';
+        col.appendChild(_wDragOv);
+        _wDrag={col,s0:parseInt(slot.dataset.slot),s1:parseInt(slot.dataset.slot),date:slot.dataset.date};
+        updateOv();
+      });
+    });
+    // Drag-and-drop from unscheduled panel or block repositioning into time slots
+    document.querySelectorAll('.week-slot-5m').forEach(slot=>{
+      slot.addEventListener('dragover',e=>{
+        if(!_unscheduledDrop.id && !_dpBlockDragId) return;
+        e.preventDefault();
+        slot.classList.add('drag-over');
+      });
+      slot.addEventListener('dragleave',()=>slot.classList.remove('drag-over'));
+      slot.addEventListener('drop',e=>{
+        slot.classList.remove('drag-over');
+        if(_dpBlockDragId){
+          e.preventDefault();
+          const p=D.dayplan.find(x=>x.id===_dpBlockDragId);
+          if(p){
+            const dur=_dpDurationMin(p);
+            p.date=slot.dataset.date;
+            p.startTime=slot.dataset.time;
+            if(dur>0){const[sh,sm]=slot.dataset.time.split(':').map(Number);const em=sh*60+sm+dur;p.endTime=p2(Math.floor(em/60))+':'+p2(em%60);}
+          }
+          _dpBlockDragId=null;
+          save();renderWeekly();
+          return;
+        }
+        if(!_unscheduledDrop.id) return;
+        e.preventDefault();
+        document.getElementById('unscheduled-drop-date').value=slot.dataset.date;
+        _setTimeSelect('unscheduled-drop-time', slot.dataset.time);
+        document.getElementById('unscheduled-drop-conflict').style.display='none';
+        openModal('unscheduled-drop-modal');
+      });
+    });
+  };
+})();
 function renderDaily() {
   document.getElementById('cal-day-title').textContent=fmtKo(calDay);
   const ds=fmtDate(calDay), hours=Array.from({length:14},(_,i)=>i+7);
-  const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort((a,b)=>(a.period||99)-(b.period||99));
+  const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort(_sortByTime);
   const isSel=ds===_dayplanViewDate;
   let html=`<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 4px 10px;border-bottom:1px solid var(--border);margin-bottom:8px;">
     <div style="font-size:11px;font-weight:600;color:var(--secondary);flex-shrink:0;padding-top:3px;">📅 Schedule</div>
     <div style="flex:1;display:flex;flex-wrap:wrap;gap:4px;">
-      ${plans.length?plans.map(p=>`<div style="font-size:11px;color:var(--secondary);background:rgba(5,150,105,0.1);padding:2px 7px;border-radius:4px;border-left:2px solid var(--secondary);${p.done?'opacity:0.5;text-decoration:line-through;':''}" title="${p.text}">P${p.period||'?'} ${p.text}</div>`).join(''):'<span style="font-size:11px;color:var(--text-lighter);">No schedule items</span>'}
+      ${plans.length?plans.map(p=>`<div style="font-size:11px;color:var(--secondary);background:rgba(5,150,105,0.1);padding:2px 7px;border-radius:4px;border-left:2px solid var(--secondary);${p.done?'opacity:0.5;text-decoration:line-through;':''}" title="${p.text}">${_dpTimeLabel(p)} ${p.text}</div>`).join(''):'<span style="font-size:11px;color:var(--text-lighter);">No schedule items</span>'}
     </div>
     ${!isSel?`<button onclick="setDayplanDate('${ds}')" class="btn btn-secondary btn-sm" style="font-size:10px;flex-shrink:0;" title="Set this day as Today\'s Schedule">Set</button>`:'<span style="font-size:10px;color:var(--secondary);font-weight:600;flex-shrink:0;">✓ Active</span>'}
   </div>`;
   html+='<div class="cal-day-view">';
   hours.forEach(h=>{
-    const evs=D.events.filter(e=>e.date===ds&&e.time&&parseInt(e.time.split(':')[0])===h);
     html+=`<div class="day-time-lbl">${p2(h)}:00</div>
     <div class="day-slot" onclick="openEvtOnDay('${ds}','${p2(h)}:00')">
-      ${evs.map(e=>`<div class="day-slot-evt" onclick="event.stopPropagation();showEvtDetail('${e.id}')"><div class="fw-600">${e.title}</div>${e.desc?`<div class="text-xs text-lighter" style="margin-top:3px;">${e.desc}</div>`:''}</div>`).join('')}
     </div>`;
   });
   html+='</div>';
   document.getElementById('cal-day-view').innerHTML=html;
 }
-function openEvtOnDay(ds,t) { document.getElementById('evt-date').value=ds; document.getElementById('evt-time').value=t; clearEventForm(); openModal('event-modal'); }
+function openEvtOnDay(ds,t) { document.getElementById('evt-date').value=ds; _setTimeSelect('evt-time', t); clearEventForm(); openModal('event-modal'); }
 
 // ── SCHEDULE ──
 let editingCell=null;
@@ -1753,7 +2572,7 @@ function clearSchCell(){
 function renderPeriodTimes(){
   const {periods,times}=D.schedule;
   let html='';
-  for(let i=0;i<periods;i++) html+=`<div class="flex items-center gap-8 mb-8"><span class="text-sm text-lighter" style="width:42px;">Period ${i+1}</span><input type="time" class="form-input" style="width:auto;" value="${times[i]||''}" onchange="D.schedule.times[${i}]=this.value;save();renderSchedule();"></div>`;
+  for(let i=0;i<periods;i++) html+=`<div class="flex items-center gap-8 mb-8"><span class="text-sm text-lighter" style="width:42px;">Period ${i+1}</span><input type="time" class="form-input" style="width:auto;" step="300" value="${times[i]||''}" onchange="D.schedule.times[${i}]=this.value;save();renderSchedule();"></div>`;
   document.getElementById('period-time-inputs').innerHTML=html;
 }
 function changePeriodCount(){
@@ -1931,29 +2750,150 @@ function saveTopic(){
 }
 async function deleteTopic(si,ci,ti){if(!await confirmDelete('This unit')) return;D.progress.subjects[si].classes[ci].topics.splice(ti,1);save();renderSubjProgress(si);}
 
+// ── EISENHOWER ──
+function renderEisenhower(){
+  const colLabels=['Urgent','Neutral','Not Urgent'];
+  const rowLabels=['Important','Neutral','Not Important'];
+  let html=`<div style="display:grid;grid-template-columns:90px repeat(3,1fr);gap:6px;">`;
+  html+=`<div></div>`;
+  colLabels.forEach(l=>html+=`<div style="text-align:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px 0;">${l}</div>`);
+  for(let i=1;i<=3;i++){
+    html+=`<div style="display:flex;align-items:center;font-size:11px;font-weight:700;color:var(--text-light);padding:4px 0;">${rowLabels[i-1]}</div>`;
+    for(let u=1;u<=3;u++){
+      const items=(D.dayplan||[]).filter(p=>(p.urgency||3)===u&&(p.importance||3)===i);
+      html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;min-height:80px;">`;
+      if(items.length){
+        items.forEach(p=>{
+          const tl=_dpTimeLabel(p);
+          html+=`<div style="padding:4px 6px;margin-bottom:4px;background:var(--surface2);border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:5px;" onclick="editDayplanItem('${p.id}')">
+            <input type="checkbox" ${p.done?'checked':''} onclick="event.stopPropagation();toggleDayplanItem('${p.id}');renderEisenhower();" style="flex-shrink:0;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${p.done?'text-decoration:line-through;opacity:0.5;':''}">${p.text}</div>
+              <div style="font-size:10px;color:var(--text-lighter);">${p.date}${tl&&tl!=='—'?' '+tl:''}</div>
+            </div>
+            <span style="font-size:9px;border-radius:3px;padding:1px 3px;background:var(--surface);color:var(--text-lighter);flex-shrink:0;">U${u}I${i}</span>
+          </div>`;
+        });
+      } else {
+        html+=`<div style="font-size:11px;color:var(--text-lighter);text-align:center;padding-top:16px;">—</div>`;
+      }
+      html+=`</div>`;
+    }
+  }
+  html+=`</div>`;
+  document.getElementById('eisenhower-grid').innerHTML=html;
+}
+
 // ── STUDENTS ──
 let curStuId=null;
+let _curStuClass='1';
+let _setechTimers={};
+
+function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _byteLen(str){return new TextEncoder().encode(str).length;}
+
 function renderStudents(){
   document.getElementById('stu-list-view').style.display='block';
   document.getElementById('stu-detail-view').style.display='none';
-  renderStuGrid(D.students);
+  _renderStuClassTabs();
+  _renderSetechTable(_curStuClass);
 }
-function renderStuGrid(list){
-  const el=document.getElementById('stu-grid');
-  if(!list.length){el.innerHTML='<div class="empty" style="grid-column:1/-1"><div class="empty-text">Add a student</div></div>';return;}
-  el.innerHTML=list.map(s=>{
-    const recs=D.records.filter(r=>r.studentId===s.id).length;
-    return `<div class="student-card" onclick="showStuDetail('${s.id}')">
-      <div class="stu-avatar">${s.name.charAt(0)}</div>
-      <div class="stu-name">${s.name}</div>
-      <div class="stu-sub">${[s.grade,s.cls,s.num?'#'+s.num:''].filter(Boolean).join(' ')}</div>
-      ${recs?`<div class="mt-8"><span class="badge badge-blue">${recs} records</span></div>`:''}
-    </div>`;
+function _renderStuClassTabs(){
+  const classes=['1','2','3','4','5','6','7','8','9'];
+  const tabs=classes.map(c=>{
+    const label=c+'반';
+    const active=_curStuClass===c?' active':'';
+    return `<button class="tab${active}" onclick="switchStuClass('${c}')">${label}</button>`;
   }).join('');
+  document.getElementById('stu-class-tabs').innerHTML=`<div class="tabs">${tabs}</div>`;
 }
-function filterStudents(){
-  const q=document.getElementById('stu-search').value.toLowerCase();
-  renderStuGrid(D.students.filter(s=>s.name.toLowerCase().includes(q)));
+function switchStuClass(c){
+  _curStuClass=c;
+  _renderStuClassTabs();
+  _renderSetechTable(c);
+}
+function _renderSetechTable(classFilter){
+  const list=D.students.filter(s=>s.classNum===classFilter);
+  const sorted=[...list].sort((a,b)=>{
+    const ca=parseInt(a.classNum)||0,cb=parseInt(b.classNum)||0;
+    if(ca!==cb) return ca-cb;
+    return (parseInt(a.number)||0)-(parseInt(b.number)||0);
+  });
+  const el=document.getElementById('stu-setech-table');
+  if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-text">학생이 없습니다</div></div>';return;}
+  const rows=sorted.map(s=>{
+    const bl1=_byteLen(s.setech_1||''); const over1=bl1>1500; const cc1=over1?'var(--danger)':'var(--text-lighter)';
+    const bl2=_byteLen(s.setech_2||''); const over2=bl2>1500; const cc2=over2?'var(--danger)':'var(--text-lighter)';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px 6px;text-align:center;vertical-align:middle;">
+        <input type="checkbox" class="setech-check" data-id="${s.id}" style="width:15px;height:15px;cursor:pointer;" onchange="updateMasterCheck()">
+      </td>
+      <td style="white-space:nowrap;text-align:center;padding:8px 10px;vertical-align:middle;">${_esc(s.classNum)}/${_esc(s.number)}</td>
+      <td style="white-space:nowrap;font-weight:600;padding:8px 10px;vertical-align:middle;">${_esc(s.name)}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--text-lighter);padding:8px 10px;vertical-align:middle;">${_esc(s.id)}</td>
+      <td style="padding:8px 10px;vertical-align:top;">
+        <div style="font-size:11px;font-weight:600;color:var(--primary);margin-bottom:4px;">1학기</div>
+        <textarea rows="3" maxlength="1500" style="width:100%;resize:vertical;box-sizing:border-box;${over1?'border-color:var(--danger);':''}" oninput="scheduleSetechSave('${s.id}',this,1)">${_esc(s.setech_1||'')}</textarea>
+        <div style="font-size:11px;color:${cc1};margin-top:2px;">${bl1} / 1500 Byte</div>
+      </td>
+      <td style="padding:8px 10px;vertical-align:top;">
+        <div style="font-size:11px;font-weight:600;color:var(--secondary);margin-bottom:4px;">2학기</div>
+        <textarea rows="3" maxlength="1500" style="width:100%;resize:vertical;box-sizing:border-box;${over2?'border-color:var(--danger);':''}" oninput="scheduleSetechSave('${s.id}',this,2)">${_esc(s.setech_2||'')}</textarea>
+        <div style="font-size:11px;color:${cc2};margin-top:2px;">${bl2} / 1500 Byte</div>
+      </td>
+    </tr>`;
+  }).join('');
+  el.innerHTML=`<table style="width:100%;border-collapse:collapse;background:var(--surface);border-radius:8px;overflow:hidden;">
+    <thead>
+      <tr style="background:var(--surface2);border-bottom:2px solid var(--border);">
+        <th style="padding:8px 6px;text-align:center;font-size:13px;">
+          <input type="checkbox" id="setech-master-check" style="width:15px;height:15px;cursor:pointer;" onchange="toggleAllStuChecks(this.checked)" title="전체 선택">
+        </th>
+        <th style="padding:8px 10px;text-align:center;font-size:13px;white-space:nowrap;">반/번호</th>
+        <th style="padding:8px 10px;text-align:left;font-size:13px;white-space:nowrap;">성명</th>
+        <th style="padding:8px 10px;text-align:left;font-size:13px;white-space:nowrap;">학생개인번호</th>
+        <th style="padding:8px 10px;text-align:left;font-size:13px;white-space:nowrap;">1학기 세특</th>
+        <th style="padding:8px 10px;text-align:left;font-size:13px;white-space:nowrap;">2학기 세특</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+function scheduleSetechSave(id,ta,sem){
+  const val=ta.value;
+  const bl=_byteLen(val);
+  const over=bl>1500;
+  ta.style.borderColor=over?'var(--danger)':'';
+  const info=ta.nextElementSibling;
+  if(info){info.textContent=bl+' / 1500 Byte';info.style.color=over?'var(--danger)':'var(--text-lighter)';}
+  const tkey=id+'_'+sem;
+  if(_setechTimers[tkey]) clearTimeout(_setechTimers[tkey]);
+  _setechTimers[tkey]=setTimeout(()=>{const s=D.students.find(x=>x.id===id);if(s){if(sem===1)s.setech_1=val;else s.setech_2=val;save();}},500);
+}
+function toggleAllStuChecks(checked){
+  document.querySelectorAll('.setech-check').forEach(cb=>cb.checked=checked);
+}
+function updateMasterCheck(){
+  const all=document.querySelectorAll('.setech-check');
+  const checked=document.querySelectorAll('.setech-check:checked');
+  const master=document.getElementById('setech-master-check');
+  if(master){master.checked=checked.length===all.length&&all.length>0;master.indeterminate=checked.length>0&&checked.length<all.length;}
+}
+function exportNeisExcel(){
+  const sorted=[...D.students].sort((a,b)=>{
+    const ca=parseInt(a.classNum)||0,cb=parseInt(b.classNum)||0;
+    if(ca!==cb) return ca-cb;
+    return (parseInt(a.number)||0)-(parseInt(b.number)||0);
+  });
+  const rows=[];
+  sorted.forEach(s=>{
+    rows.push({'학년도':s.year||'','학기':'1','학년':s.grade||'','반/번호':s.classNum+'/'+s.number,'학생개인번호':s.id,'성명':s.name,'과목명':s.subject||'','세부능력 및 특기사항':s.setech_1||''});
+    rows.push({'학년도':s.year||'','학기':'2','학년':s.grade||'','반/번호':s.classNum+'/'+s.number,'학생개인번호':s.id,'성명':s.name,'과목명':s.subject||'','세부능력 및 특기사항':s.setech_2||''});
+  });
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'세특');
+  XLSX.writeFile(wb,'과목세특_내보내기_'+todayStr()+'.xlsx');
 }
 function showStuDetail(id){
   curStuId=id; const s=D.students.find(x=>x.id===id); if(!s) return;
@@ -2045,9 +2985,219 @@ function saveRecord(){
   D.records.push({id:uid(),studentId:curStuId,date:document.getElementById('rec-date').value,type:document.getElementById('rec-type').value,content:c});
   save(); closeModal('rec-modal'); renderStudentRecords();
 }
+function exportRecordsToExcel(){
+  const rows=D.records.map(r=>{
+    const s=D.students.find(x=>x.id===r.studentId)||{};
+    return{'학생이름':s.name||'','번호':s.number||'','날짜':r.date||'','유형':r.type||'','내용':r.content||''};
+  }).sort((a,b)=>a['학생이름'].localeCompare(b['학생이름'])||b['날짜'].localeCompare(a['날짜']));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'학생기록');
+  XLSX.writeFile(wb,'학생기록_'+todayStr()+'.xlsx');
+}
 async function deleteRecord(id){
   if(!await confirmDelete('This record')) return;
   D.records=D.records.filter(r=>r.id!==id); save(); renderStudentRecords();
+}
+
+// ── LOCK / UNLOCK ──
+let _isLocked=false;
+function lockBtnClick(){
+  if(_isLocked) openUnlockModal();
+  else toggleLock();
+}
+function toggleLock(){
+  _isLocked=true;
+  document.body.classList.add('locked');
+  document.getElementById('lock-btn').textContent='🔒 마감 취소';
+}
+function openUnlockModal(){
+  document.getElementById('unlock-pw-input').value='';
+  document.getElementById('unlock-pw-error').textContent='';
+  openModal('unlock-modal');
+  setTimeout(()=>document.getElementById('unlock-pw-input').focus(),100);
+}
+function confirmUnlock(){
+  if(document.getElementById('unlock-pw-input').value==='1225'){
+    _isLocked=false;
+    document.body.classList.remove('locked');
+    document.getElementById('lock-btn').textContent='마감';
+    closeModal('unlock-modal');
+  } else {
+    document.getElementById('unlock-pw-error').textContent='비밀번호가 올바르지 않습니다.';
+    document.getElementById('unlock-pw-input').value='';
+    document.getElementById('unlock-pw-input').focus();
+  }
+}
+
+// ── 메뉴얼 ──
+function openManualModal(){ openModal('manual-modal'); }
+
+// ── 기재요령 검토 ──
+let _reviewStudents=[], _reviewIndex=0, _reviewViolations={}, _reviewSemester=1;
+
+function startSetechReview(){
+  const checked=[...document.querySelectorAll('.setech-check:checked')].map(cb=>cb.dataset.id);
+  if(!checked.length){alert('검토할 학생을 선택해주세요.');return;}
+  let apiKey=localStorage.getItem('_claudeApiKey');
+  if(!apiKey){
+    apiKey=prompt('Claude API 키를 입력하세요 (최초 1회, 브라우저에 저장됩니다):');
+    if(!apiKey) return;
+    localStorage.setItem('_claudeApiKey',apiKey.trim());
+  }
+  _reviewStudents=checked.map(id=>D.students.find(s=>s.id===id)).filter(Boolean);
+  _reviewIndex=0;
+  _reviewViolations={};
+  openModal('setech-review-modal');
+  _loadReviewStudent();
+}
+
+function _loadReviewStudent(){
+  if(!_reviewStudents.length) return;
+  const s=_reviewStudents[_reviewIndex];
+  document.getElementById('review-student-info').textContent=`${s.classNum}반 ${s.number}번 ${s.name}  (${_reviewIndex+1} / ${_reviewStudents.length})`;
+  document.getElementById('review-prev-btn').disabled=_reviewIndex===0;
+  document.getElementById('review-next-btn').disabled=_reviewIndex===_reviewStudents.length-1;
+  _reviewSemester=1;
+  document.getElementById('review-sem1-btn').className='btn btn-primary btn-sm';
+  document.getElementById('review-sem2-btn').className='btn btn-secondary btn-sm';
+  const text=s.setech_1||'';
+  document.getElementById('review-edit-ta').value=text;
+  document.getElementById('review-save-check').checked=false;
+  const cacheKey=s.id+'_1';
+  if(_reviewViolations[cacheKey]!==undefined){
+    _renderReviewText(text,_reviewViolations[cacheKey]);
+  } else if(!text.trim()){
+    document.getElementById('review-text-panel').innerHTML='<div style="color:var(--text-lighter);font-size:13px;padding:20px;">세특 내용이 없습니다.</div>';
+  } else {
+    document.getElementById('review-text-panel').innerHTML='<div class="review-loading"><span class="vio-spinner"></span> Claude가 검토 중입니다…</div>';
+    _callClaudeReview(s,text,1);
+  }
+}
+
+async function _callClaudeReview(s,text,sem){
+  const apiKey=localStorage.getItem('_claudeApiKey');
+  const cacheKey=s.id+'_'+sem;
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':apiKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:2048,
+        system:'당신은 중학교 생활기록부 세부능력 및 특기사항(세특) 검토 전문가입니다. 아래 세특 내용을 검토하고 위반사항을 JSON 형식으로 반환하세요. 형식: {"violations": [{"text": "위반된 원문 텍스트", "rule": "위반 기재요령 항목", "suggestion": "수정 방향"}]}. 위반이 없으면 {"violations": []} 반환. 검토 기준: 1. 1인칭 주어 사용 금지 2. 타 학생 실명 또는 비교 표현 금지 3. 미래형 표현 금지 4. 약어·비표준어 사용 금지 5. 부정적 표현 금지 6. 근거 없는 추상적 표현 지양 7. 교사 주어 표현 금지',
+        messages:[{role:'user',content:text}]
+      })
+    });
+    if(!resp.ok){const err=await resp.json().catch(()=>({}));throw new Error(err.error?.message||`HTTP ${resp.status}`);}
+    const data=await resp.json();
+    const raw=data.content[0].text;
+    const m=raw.match(/\{[\s\S]*\}/);
+    let violations=[];
+    if(m){try{violations=JSON.parse(m[0]).violations||[];}catch(e){}}
+    _reviewViolations[cacheKey]=violations;
+    if(s.id===_reviewStudents[_reviewIndex].id&&sem===_reviewSemester){
+      _renderReviewText(text,violations);
+    }
+  }catch(e){
+    if(s.id===_reviewStudents[_reviewIndex].id&&sem===_reviewSemester){
+      document.getElementById('review-text-panel').innerHTML=`<div style="color:var(--danger);font-size:13px;padding:20px;">API 오류: ${_esc(e.message)}<br><small style="color:var(--text-lighter);">API 키를 확인하거나 다시 시도해주세요.</small><br><button class="btn btn-secondary btn-sm" style="margin-top:10px;" onclick="_retryReview()">재시도</button>&nbsp;<button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="localStorage.removeItem('_claudeApiKey');alert('API 키가 삭제되었습니다. 다시 검토를 시작해주세요.')">API 키 재입력</button></div>`;
+    }
+  }
+}
+
+function _retryReview(){
+  const s=_reviewStudents[_reviewIndex];
+  const text=_reviewSemester===1?(s.setech_1||''):(s.setech_2||'');
+  delete _reviewViolations[s.id+'_'+_reviewSemester];
+  document.getElementById('review-text-panel').innerHTML='<div class="review-loading"><span class="vio-spinner"></span> Claude가 검토 중입니다…</div>';
+  _callClaudeReview(s,text,_reviewSemester);
+}
+
+function _renderReviewText(text,violations){
+  if(!text.trim()){
+    document.getElementById('review-text-panel').innerHTML='<div style="color:var(--text-lighter);font-size:13px;">세특 내용이 없습니다.</div>';
+    return;
+  }
+  const segs=[];
+  violations.forEach(v=>{
+    if(!v.text) return;
+    const idx=text.indexOf(v.text);
+    if(idx>=0) segs.push({start:idx,end:idx+v.text.length,vio:v});
+  });
+  segs.sort((a,b)=>a.start-b.start);
+  const filtered=[];let lastEnd=0;
+  for(const seg of segs){if(seg.start>=lastEnd){filtered.push(seg);lastEnd=seg.end;}}
+  let html='';let pos=0;
+  for(const seg of filtered){
+    if(pos<seg.start) html+=_esc(text.slice(pos,seg.start));
+    html+=`<span class="vio-text" onclick="showVioTooltip(event,this)">${_esc(seg.vio.text)}<span class="vio-tooltip"><div class="vio-rule">⚠️ ${_esc(seg.vio.rule)}</div><div class="vio-sug">💡 수정 방향: ${_esc(seg.vio.suggestion)}</div></span></span>`;
+    pos=seg.end;
+  }
+  if(pos<text.length) html+=_esc(text.slice(pos));
+  const count=filtered.length;
+  const badge=count>0
+    ?`<div style="margin-bottom:10px;padding:6px 10px;background:var(--danger-dim);border-radius:var(--radius-sm);font-size:12px;color:var(--danger);font-weight:600;">⚠️ ${count}개의 위반사항 발견 — 노란 부분을 클릭하여 확인</div>`
+    :`<div style="margin-bottom:10px;padding:6px 10px;background:var(--secondary-dim);border-radius:var(--radius-sm);font-size:12px;color:var(--secondary);font-weight:600;">✓ 위반사항이 없습니다</div>`;
+  document.getElementById('review-text-panel').innerHTML=badge+`<div style="white-space:pre-wrap;">${html}</div>`;
+}
+
+function showVioTooltip(e,el){
+  e.stopPropagation();
+  const tip=el.querySelector('.vio-tooltip');
+  if(!tip) return;
+  const visible=tip.style.display==='block';
+  document.querySelectorAll('.vio-tooltip').forEach(t=>t.style.display='none');
+  if(!visible) tip.style.display='block';
+}
+document.addEventListener('click',()=>document.querySelectorAll('.vio-tooltip').forEach(t=>t.style.display='none'));
+
+function reviewSwitchSem(sem){
+  _reviewSemester=sem;
+  const s=_reviewStudents[_reviewIndex];
+  const text=sem===1?(s.setech_1||''):(s.setech_2||'');
+  document.getElementById('review-sem1-btn').className=sem===1?'btn btn-primary btn-sm':'btn btn-secondary btn-sm';
+  document.getElementById('review-sem2-btn').className=sem===2?'btn btn-primary btn-sm':'btn btn-secondary btn-sm';
+  document.getElementById('review-edit-ta').value=text;
+  document.getElementById('review-save-check').checked=false;
+  const cacheKey=s.id+'_'+sem;
+  if(_reviewViolations[cacheKey]!==undefined){
+    _renderReviewText(text,_reviewViolations[cacheKey]);
+  } else if(!text.trim()){
+    document.getElementById('review-text-panel').innerHTML='<div style="color:var(--text-lighter);font-size:13px;padding:20px;">세특 내용이 없습니다.</div>';
+  } else {
+    document.getElementById('review-text-panel').innerHTML='<div class="review-loading"><span class="vio-spinner"></span> Claude가 검토 중입니다…</div>';
+    _callClaudeReview(s,text,sem);
+  }
+}
+
+function reviewNav(dir){
+  _reviewIndex=Math.max(0,Math.min(_reviewStudents.length-1,_reviewIndex+dir));
+  _loadReviewStudent();
+}
+
+function reviewApplySave(){
+  if(!document.getElementById('review-save-check').checked){
+    alert('저장하려면 "이 내용으로 저장" 체크박스를 선택하세요.');
+    return;
+  }
+  const ref=_reviewStudents[_reviewIndex];
+  const stu=D.students.find(x=>x.id===ref.id);
+  if(!stu) return;
+  const newText=document.getElementById('review-edit-ta').value;
+  if(_reviewSemester===1) stu.setech_1=newText; else stu.setech_2=newText;
+  _reviewStudents[_reviewIndex]=Object.assign({},stu);
+  delete _reviewViolations[ref.id+'_'+_reviewSemester];
+  save();
+  document.getElementById('review-save-check').checked=false;
+  _renderReviewText(newText,[]);
+  const btn=document.querySelector('[onclick="reviewApplySave()"]');
+  if(btn){const orig=btn.textContent;btn.textContent='✓ 저장됨';setTimeout(()=>btn.textContent=orig,1500);}
 }
 
 // ── CHECKLIST ──
@@ -2096,7 +3246,7 @@ function quickAdd(){
 }
 function addDashTask(){
   const t=document.getElementById('dash-task-text').value.trim(); if(!t) return;
-  D.tasks.push({id:uid(),title:t,cat:document.getElementById('dash-task-cat').value,date:'',done:false});
+  D.tasks.push({id:uid(),title:t,date:'',done:false,desc:'',note:'',steps:[]});
   save(); renderDashboard();
 }
 function saveTask(){
@@ -2292,8 +3442,332 @@ document.querySelectorAll('.nav-item').forEach(el=>el.addEventListener('click',(
 }));
 
 // ── INIT ──
+const NEIS_STUDENTS=[
+  {id:"2025000345",name:"강재후",classNum:"1",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000455",name:"김도이",classNum:"1",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000596",name:"김동윤",classNum:"1",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000348",name:"김민교",classNum:"1",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000575",name:"김시연",classNum:"1",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000349",name:"김연우",classNum:"1",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000482",name:"김현서",classNum:"1",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000406",name:"남강현",classNum:"1",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000560",name:"노하율",classNum:"1",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000364",name:"문연우",classNum:"1",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000578",name:"문준서",classNum:"1",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000644",name:"박시현",classNum:"1",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000581",name:"박유은",classNum:"1",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000433",name:"손보민",classNum:"1",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000538",name:"송호준",classNum:"1",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000410",name:"신유찬",classNum:"1",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000367",name:"안지희",classNum:"1",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000413",name:"오유나",classNum:"1",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000459",name:"우서윤",classNum:"1",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000487",name:"이루리",classNum:"1",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000388",name:"이수아",classNum:"1",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000334",name:"이아윤",classNum:"1",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000417",name:"이윤서",classNum:"1",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000586",name:"장동유",classNum:"1",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000394",name:"장서연",classNum:"1",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000547",name:"장연우",classNum:"1",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000343",name:"정민석",classNum:"1",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000590",name:"천준혁",classNum:"1",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000572",name:"최연서",classNum:"1",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000446",name:"최은환",classNum:"1",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000470",name:"최지성",classNum:"1",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000400",name:"최진명",classNum:"1",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000376",name:"한유빈",classNum:"1",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000401",name:"홍지안",classNum:"1",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000551",name:"홍채원",classNum:"1",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000402",name:"강나연",classNum:"2",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000594",name:"강정훈",classNum:"2",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000531",name:"강혜윤",classNum:"2",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000513",name:"고연우",classNum:"2",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000356",name:"고준영",classNum:"2",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000322",name:"권하윤",classNum:"2",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000425",name:"김건우",classNum:"2",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000514",name:"김규연",classNum:"2",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000344",name:"김도윤",classNum:"2",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000479",name:"김도진",classNum:"2",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000304",name:"김려온",classNum:"2",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000556",name:"김제니",classNum:"2",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000577",name:"김태이",classNum:"2",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000427",name:"김한서",classNum:"2",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000534",name:"나지아",classNum:"2",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000327",name:"남지호",classNum:"2",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000366",name:"박희서",classNum:"2",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000311",name:"송민규",classNum:"2",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000574",name:"송채원",classNum:"2",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000385",name:"신채규",classNum:"2",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000412",name:"오상훈",classNum:"2",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000539",name:"원유진",classNum:"2",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000567",name:"유승현",classNum:"2",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000371",name:"이라임",classNum:"2",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000613",name:"이서준",classNum:"2",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000391",name:"이원준",classNum:"2",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000525",name:"이한준",classNum:"2",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000419",name:"임현준",classNum:"2",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000468",name:"조선우",classNum:"2",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000439",name:"진혁진",classNum:"2",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000422",name:"천리안",classNum:"2",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000375",name:"최시완",classNum:"2",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000342",name:"홍예준",classNum:"2",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000321",name:"홍준기",classNum:"2",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000377",name:"김차민",classNum:"2",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000347",name:"강민채",classNum:"3",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000453",name:"강연우",classNum:"3",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000476",name:"공서준",classNum:"3",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000593",name:"구아인",classNum:"3",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000445",name:"권예지",classNum:"3",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000454",name:"김대현",classNum:"3",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000478",name:"김도윤",classNum:"3",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000358",name:"김도진",classNum:"3",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000533",name:"김성윤",classNum:"3",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000604",name:"김시원",classNum:"3",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000360",name:"김윤아",classNum:"3",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000457",name:"남궁하윤",classNum:"3",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000497",name:"노주찬",classNum:"3",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000561",name:"문정혁",classNum:"3",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000407",name:"박서연",classNum:"3",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000423",name:"배연재",classNum:"3",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000518",name:"서예훈",classNum:"3",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000411",name:"안시준",classNum:"3",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000314",name:"연승",classNum:"3",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000434",name:"염준선",classNum:"3",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000484",name:"유다현",classNum:"3",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000648",name:"윤지원",classNum:"3",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000387",name:"이상현",classNum:"3",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000315",name:"이승빈",classNum:"3",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000584",name:"이재윤",classNum:"3",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000585",name:"이재후",classNum:"3",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000620",name:"이주원",classNum:"3",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000543",name:"이지민",classNum:"3",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000523",name:"이지유",classNum:"3",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000508",name:"정은성",classNum:"3",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000509",name:"조윤서",classNum:"3",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000399",name:"최제인",classNum:"3",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000597",name:"허연",classNum:"3",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000510",name:"홍예주",classNum:"3",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000451",name:"황태웅",classNum:"3",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000357",name:"구윤상",classNum:"4",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000404",name:"김범준",classNum:"4",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000359",name:"김선영",classNum:"4",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000622",name:"김시연",classNum:"4",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000555",name:"김시준",classNum:"4",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000351",name:"김예슬",classNum:"4",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000496",name:"김욱",classNum:"4",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000573",name:"김유경",classNum:"4",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000576",name:"김지호",classNum:"4",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000511",name:"김현우",classNum:"4",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000617",name:"민시은",classNum:"4",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000535",name:"박선준",classNum:"4",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000580",name:"박용우",classNum:"4",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000499",name:"박이수",classNum:"4",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000537",name:"박재현",classNum:"4",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000519",name:"손주은",classNum:"4",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000500",name:"손채환",classNum:"4",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000605",name:"여준서",classNum:"4",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000436",name:"이강민",classNum:"4",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000461",name:"이영우",classNum:"4",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000389",name:"이예준",classNum:"4",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000372",name:"이예찬",classNum:"4",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000437",name:"이유선",classNum:"4",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000542",name:"이윤영",classNum:"4",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000392",name:"이주하",classNum:"4",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000570",name:"장하준",classNum:"4",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000466",name:"정서준",classNum:"4",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000642",name:"조윤이",classNum:"4",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000397",name:"조혜린",classNum:"4",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000421",name:"지태서",classNum:"4",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000452",name:"진상호",classNum:"4",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000339",name:"최서현",classNum:"4",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000528",name:"태지환",classNum:"4",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000448",name:"하승연",classNum:"4",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000442",name:"허유빈",classNum:"4",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000475",name:"고준영",classNum:"5",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000598",name:"김나율",classNum:"5",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000480",name:"김래아",classNum:"5",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000532",name:"김서율",classNum:"5",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000554",name:"김시원",classNum:"5",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000350",name:"김연재",classNum:"5",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000557",name:"김종우",classNum:"5",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000352",name:"김지원",classNum:"5",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000621",name:"김하진",classNum:"5",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000354",name:"김현준",classNum:"5",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000635",name:"남다혜",classNum:"5",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000328",name:"문세라",classNum:"5",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000429",name:"문이한",classNum:"5",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000431",name:"변재하",classNum:"5",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000378",name:"선예린",classNum:"5",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000483",name:"성시현",classNum:"5",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000368",name:"양지원",classNum:"5",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000520",name:"오세진",classNum:"5",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000485",name:"유동찬",classNum:"5",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000370",name:"유제성",classNum:"5",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000460",name:"유지훈",classNum:"5",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000541",name:"이서영",classNum:"5",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000414",name:"이수아",classNum:"5",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000489",name:"이용진",classNum:"5",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000373",name:"이재인",classNum:"5",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000524",name:"이진행",classNum:"5",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000346",name:"이충현",classNum:"5",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000463",name:"이현준",classNum:"5",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000544",name:"임시온",classNum:"5",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000320",name:"조윤하",classNum:"5",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000589",name:"조은서",classNum:"5",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000527",name:"채정원",classNum:"5",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000588",name:"천승환",classNum:"5",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000609",name:"한승준",classNum:"5",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000443",name:"홍민지",classNum:"5",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000403",name:"고승범",classNum:"6",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000379",name:"김민재",classNum:"6",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000456",name:"김범준",classNum:"6",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000405",name:"김서현",classNum:"6",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000553",name:"김수빈",classNum:"6",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000606",name:"김이안",classNum:"6",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000361",name:"김이준",classNum:"6",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000365",name:"박영우",classNum:"6",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000408",name:"박윤진",classNum:"6",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000563",name:"박준수",classNum:"6",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000564",name:"박태인",classNum:"6",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000582",name:"백윤서",classNum:"6",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000566",name:"오은준",classNum:"6",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000501",name:"오주영",classNum:"6",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000435",name:"오현석",classNum:"6",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000502",name:"유재건",classNum:"6",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000333",name:"이승훈",classNum:"6",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000488",name:"이아현",classNum:"6",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000568",name:"이예영",classNum:"6",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000599",name:"이예준",classNum:"6",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000316",name:"이주원",classNum:"6",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000336",name:"이준서",classNum:"6",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000623",name:"이지유",classNum:"6",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000490",name:"이채희",classNum:"6",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000317",name:"전서윤",classNum:"6",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000305",name:"전아라",classNum:"6",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000615",name:"정우진",classNum:"6",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000587",name:"조서현",classNum:"6",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000396",name:"조승빈",classNum:"6",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000491",name:"최혜린",classNum:"6",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000440",name:"한서현",classNum:"6",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000341",name:"한수백",classNum:"6",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000449",name:"한은서",classNum:"6",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000441",name:"한주호",classNum:"6",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000521",name:"이민하",classNum:"6",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000601",name:"김건희",classNum:"7",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000515",name:"김단아",classNum:"7",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000643",name:"김민채",classNum:"7",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000324",name:"김소현",classNum:"7",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000612",name:"김예서",classNum:"7",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000495",name:"김우현",classNum:"7",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000516",name:"김재윤",classNum:"7",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000426",name:"김태린",classNum:"7",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000602",name:"동유준",classNum:"7",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000430",name:"민초이",classNum:"7",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000579",name:"박가은",classNum:"7",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000529",name:"박유나",classNum:"7",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000536",name:"박윤서",classNum:"7",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000309",name:"성민호",classNum:"7",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000310",name:"성윤호",classNum:"7",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000312",name:"신예준",classNum:"7",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000330",name:"오준석",classNum:"7",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000503",name:"이건",classNum:"7",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000472",name:"이다연",classNum:"7",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000418",name:"이준서",classNum:"7",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000438",name:"이하성",classNum:"7",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000393",name:"이현준",classNum:"7",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000546",name:"장성은",classNum:"7",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000306",name:"장은규",classNum:"7",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000464",name:"장지희",classNum:"7",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000465",name:"전가은",classNum:"7",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000319",name:"정아인",classNum:"7",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000467",name:"정은세",classNum:"7",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000338",name:"정희준",classNum:"7",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000549",name:"조아준",classNum:"7",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000469",name:"천수지",classNum:"7",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000550",name:"최정후",classNum:"7",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000600",name:"하유경",classNum:"7",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000473",name:"하지원",classNum:"7",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000444",name:"황지성",classNum:"7",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000474",name:"강아인",classNum:"8",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000323",name:"김서연",classNum:"8",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000512",name:"김세연",classNum:"8",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000592",name:"김승현",classNum:"8",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000381",name:"김은선",classNum:"8",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000558",name:"김채원",classNum:"8",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000481",name:"김하연",classNum:"8",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000326",name:"김현재",classNum:"8",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000645",name:"박정민",classNum:"8",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000432",name:"변지원",classNum:"8",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000409",name:"서유현",classNum:"8",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000329",name:"서정빈",classNum:"8",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000628",name:"송인욱",classNum:"8",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000313",name:"심채현",classNum:"8",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000565",name:"안시은",classNum:"8",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000552",name:"오시언",classNum:"8",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000386",name:"윤지호",classNum:"8",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000332",name:"이동욱",classNum:"8",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000540",name:"이동희",classNum:"8",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000603",name:"이선준",classNum:"8",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000390",name:"이예준",classNum:"8",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000335",name:"이유찬",classNum:"8",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000505",name:"이준희",classNum:"8",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000569",name:"이태윤",classNum:"8",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000462",name:"이하윤",classNum:"8",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000545",name:"임하준",classNum:"8",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000506",name:"임하진",classNum:"8",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000395",name:"장지윤",classNum:"8",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000630",name:"장현욱",classNum:"8",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000318",name:"전시혁",classNum:"8",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000337",name:"정상은",classNum:"8",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000526",name:"제하준",classNum:"8",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000571",name:"조연희",classNum:"8",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000340",name:"하솔",classNum:"8",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000450",name:"한태현",classNum:"8",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000530",name:"강지우",classNum:"9",number:"1",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000424",name:"김강율",classNum:"9",number:"2",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000591",name:"김동윤",classNum:"9",number:"3",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000595",name:"김서현",classNum:"9",number:"4",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000380",name:"김유겸",classNum:"9",number:"5",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000362",name:"김준섭",classNum:"9",number:"6",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000608",name:"김지호",classNum:"9",number:"7",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000353",name:"김찬희",classNum:"9",number:"8",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000382",name:"김채율",classNum:"9",number:"9",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000363",name:"김태래",classNum:"9",number:"10",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000428",name:"김현승",classNum:"9",number:"11",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000355",name:"남송현",classNum:"9",number:"12",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000559",name:"노주윤",classNum:"9",number:"13",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000458",name:"문율",classNum:"9",number:"14",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000562",name:"박세인",classNum:"9",number:"15",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000307",name:"박연서",classNum:"9",number:"16",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000308",name:"방선유",classNum:"9",number:"17",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000383",name:"방찬솔",classNum:"9",number:"18",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000517",name:"백준우",classNum:"9",number:"19",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000384",name:"신새벽",classNum:"9",number:"20",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000583",name:"안태훈",classNum:"9",number:"21",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000627",name:"유나윤",classNum:"9",number:"22",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000492",name:"유리안",classNum:"9",number:"23",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000486",name:"윤하람",classNum:"9",number:"24",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000331",name:"이도건",classNum:"9",number:"25",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000522",name:"이수지",classNum:"9",number:"26",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000415",name:"이예성",classNum:"9",number:"27",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000416",name:"이예은",classNum:"9",number:"28",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000374",name:"이하람",classNum:"9",number:"29",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000420",name:"장예은",classNum:"9",number:"30",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000447",name:"전세훈",classNum:"9",number:"31",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000548",name:"정소은",classNum:"9",number:"32",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000398",name:"최용대",classNum:"9",number:"33",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2025000471",name:"한주형",classNum:"9",number:"34",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""},
+  {id:"2026001923",name:"김준하",classNum:"9",number:"35",year:"2026",semester:"1",grade:"2",subject:"과학",setech_1:"",setech_2:""}
+];
+
 function _startApp() {
   _fixData();
+  if(D.students.length===0){D.students=NEIS_STUDENTS.map(s=>Object.assign({},s));save();}
+  document.getElementById('evt-time-wrap').innerHTML = _timeSelectHtml('evt-time');
+  document.getElementById('evt-end-time-wrap').innerHTML = _timeSelectHtml('evt-end-time');
+  document.getElementById('dayplan-edit-startTime-wrap').innerHTML = _timeSelectHtml('dayplan-edit-startTime');
+  document.getElementById('dayplan-edit-endTime-wrap').innerHTML = _timeSelectHtml('dayplan-edit-endTime');
+  document.getElementById('unscheduled-drop-time-wrap').innerHTML = _timeSelectHtml('unscheduled-drop-time');
   if(localStorage.getItem('sidebarCollapsed')==='1') document.body.classList.add('sidebar-collapsed');
   const d=TODAY;
   document.getElementById('sidebar-date').textContent=`${DAYS_KO[d.getDay()]}, ${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
@@ -2301,9 +3775,36 @@ function _startApp() {
   document.getElementById('evt-date').value=todayStr();
   document.getElementById('quick-date').value=todayStr();
   renderDashboard();
+  _syncDashSearchWidth();
 }
 
 load(); // localStorage 먼저 로드
+
+// ── 환경 분리 (Dev vs Production) ──────────────────────────────────
+// github.io 도메인이면 프로덕션, 그 외(로컬 file:// 포함)는 개발 환경
+const IS_PROD = location.hostname.includes('github.io');
+const FB_COLLECTION = IS_PROD ? 'edunote' : 'dev_edunote';
+
+// 화면 상단에 개발 환경 배너 표시
+if (!IS_PROD) {
+  const banner = document.createElement('div');
+  banner.id = 'dev-banner';
+  banner.innerHTML = '🛠️ 개발 환경 &nbsp;|&nbsp; DB: <b>dev_edunote</b> &nbsp;(프로덕션 데이터와 완전히 분리됨)';
+  banner.style.cssText = [
+    'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:9999',
+    'background:#b45309', 'color:#fff', 'text-align:center',
+    'padding:6px 12px', 'font-size:12px', 'font-weight:600',
+    'letter-spacing:0.2px', 'pointer-events:none'
+  ].join(';');
+  document.body.appendChild(banner);
+  // 배너 높이만큼 main 영역 밀어내기
+  document.querySelector('.main').style.paddingTop = '52px';
+}
+
+console.log(`%c[edunote] 환경: ${IS_PROD ? '🚀 PRODUCTION' : '🛠️ DEVELOPMENT'}`, 'font-weight:bold;font-size:13px;color:' + (IS_PROD ? '#059669' : '#b45309'));
+console.log(`%c[edunote] Firebase 컬렉션: "${FB_COLLECTION}"`, 'color:' + (IS_PROD ? '#059669' : '#b45309'));
+// ───────────────────────────────────────────────────────────────────
+
 try {
   const app = firebase.initializeApp({
     apiKey: "AIzaSyAbHRNi10RttJNoLJCuxZQHucwp5Vttn90",
@@ -2314,7 +3815,7 @@ try {
     appId: "1:769455023609:web:48fc29f58bf069acaa0928"
   });
   const db = firebase.firestore();
-  const REF = db.collection('edunote').doc('main');
+  const REF = db.collection(FB_COLLECTION).doc('main');
   window._fbSave = (data) => REF.set({ data: JSON.stringify(data) }).catch(e => console.error('FB save:', e));
   REF.get().then(snap => {
     if (snap.exists) {
