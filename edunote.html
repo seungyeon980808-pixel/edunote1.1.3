@@ -35,6 +35,25 @@
   --radius: 10px;
   --radius-sm: 7px;
   --sidebar: 220px;
+  --proj-green: #059669;
+  --proj-green-dim: rgba(5,150,105,0.10);
+}
+/* ── Responsive Layout ── */
+@media (max-width: 768px) {
+  body { font-size: clamp(11px, 3.2vw, 14px); }
+  #dash-grid { display:block !important; }
+  .dash-widget { display:block !important; width:100% !important; margin-bottom:10px; }
+  .dash-widget[style] { grid-column:unset !important; grid-row:unset !important; }
+  .page-header-row { flex-wrap:wrap; gap:8px; }
+  .modal { max-width:calc(100vw - 20px); margin:10px auto; }
+  .g2 { grid-template-columns:1fr !important; }
+  .page-title { font-size:clamp(16px,5vw,22px); }
+  .card-title { font-size:clamp(10px,2.8vw,12px); }
+  .btn { font-size:clamp(11px,3vw,13px); }
+}
+@media (min-width: 769px) and (max-width: 1024px) {
+  body { font-size: clamp(12px, 1.4vw, 14px); }
+  #dash-grid { grid-template-columns: repeat(4, 1fr) !important; }
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;}
@@ -490,6 +509,10 @@ body.locked .btn-editing{display:none!important;}
       <span class="nav-icon">🎯</span>
       <span class="nav-label">Eisenhower</span>
     </div>
+    <div class="nav-item" data-page="projects" title="Projects">
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></span>
+      <span class="nav-label">Projects</span>
+    </div>
   </nav>
   <div class="sidebar-footer">v1.0 · Data stored in browser</div>
 </aside>
@@ -554,6 +577,7 @@ body.locked .btn-editing{display:none!important;}
         <button class="cal-nav-btn" onclick="calNav(-1)">&#8249;</button>
         <div class="cal-nav-title" id="cal-week-title"></div>
         <button class="cal-nav-btn" onclick="calNav(1)">&#8250;</button>
+        <button class="btn btn-secondary btn-sm" id="week-compact-btn" onclick="toggleWeekCompact()" title="간략/상세 전환">☰</button>
         <button class="btn btn-primary btn-sm" onclick="openModal('event-modal')">+ Event</button>
       </div>
       <div id="cal-week-grid"></div>
@@ -730,6 +754,18 @@ body.locked .btn-editing{display:none!important;}
   <div id="eisenhower-grid"></div>
 </div>
 
+<!-- PROJECTS -->
+<div id="page-projects" class="page">
+  <div class="page-header-row">
+    <div>
+      <div class="page-title">📁 Projects</div>
+      <div class="page-subtitle">Manage your projects and timelines</div>
+    </div>
+    <button class="btn btn-primary" onclick="openProjectModal()">+ 새 프로젝트</button>
+  </div>
+  <div id="projects-list"></div>
+</div>
+
 </main>
 
 <!-- ── MODALS ── -->
@@ -775,6 +811,7 @@ body.locked .btn-editing{display:none!important;}
         <option value="meeting">Meeting</option><option value="deadline">Deadline</option><option value="personal">Personal</option>
       </select>
     </div>
+    <div class="form-group"><label class="form-label">문서번호</label><input type="text" class="form-input" id="evt-docnumber" placeholder="문서번호 (선택)"></div>
     <div class="form-group"><label class="form-label">Description</label><textarea class="form-textarea" id="evt-desc" placeholder="Content (optional)"></textarea></div>
     <div class="form-group"><label class="form-label">Notes</label><input type="text" class="form-input" id="evt-note" placeholder="Notes (optional)"></div>
     <div class="form-group">
@@ -1005,6 +1042,9 @@ body.locked .btn-editing{display:none!important;}
     <div class="form-group"><label class="form-label">Description</label>
       <textarea class="form-textarea" id="dayplan-edit-desc" placeholder="Details, materials, goals…" style="min-height:70px;"></textarea>
     </div>
+    <div class="form-group"><label class="form-label">문서번호</label>
+      <input type="text" class="form-input" id="dayplan-edit-docnumber" placeholder="문서번호 (선택)">
+    </div>
     <div class="form-group"><label class="form-label">Notes</label>
       <input type="text" class="form-input" id="dayplan-edit-note" placeholder="Optional">
     </div>
@@ -1218,8 +1258,10 @@ let D = {
   secrets: { hash: null, items: [] },
   dayplan: [],
   routines: [],
-  dashLayout: { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6} },
-  manuals: [{title:"대왕중학교 학교규정", url:"https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing"}]
+  dashLayout: { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6}, projects_timeline:{col:8,row:2,cs:1,rs:7} },
+  manuals: [{title:"대왕중학교 학교규정", url:"https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing"}],
+  projects: [],
+  widgetNames: {}
 };
 
 // ── DIAL / TIME HELPERS ──
@@ -1310,6 +1352,8 @@ function _fixData() {
   });
   if (!D.routines) D.routines = [];
   if (!D.manuals) D.manuals = [{title:"대왕중학교 학교규정", url:"https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing"}];
+  if (!D.projects) D.projects = [];
+  if (!D.widgetNames) D.widgetNames = {};
   // Migrate legacy setech → setech_1
   (D.students||[]).forEach(s=>{
     if(s.setech!==undefined&&s.setech_1===undefined){s.setech_1=s.setech;delete s.setech;}
@@ -1329,9 +1373,9 @@ function _fixData() {
     });
     D.events = [];
   }
-  const _dlDef = { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6} };
+  const _dlDef = { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6}, projects_timeline:{col:8,row:2,cs:1,rs:7} };
   if (!D.dashLayout) D.dashLayout = {};
-  ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals'].forEach(w => {
+  ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'].forEach(w => {
     const v = D.dashLayout[w];
     if (!v || typeof v !== 'object') D.dashLayout[w] = typeof v === 'number' ? {col:v, row:1, cs:_dlDef[w].cs, rs:_dlDef[w].rs} : _dlDef[w];
     if (!D.dashLayout[w].row) D.dashLayout[w].row = 1;
@@ -1363,7 +1407,7 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
   const r = { dashboard:renderDashboard, calendar:renderCalendar, schedule:renderSchedule,
-    progress:renderProgress, students:renderStudents, checklist:renderChecklist, memos:renderMemos, eisenhower:renderEisenhower };
+    progress:renderProgress, students:renderStudents, checklist:renderChecklist, memos:renderMemos, eisenhower:renderEisenhower, projects:renderProjects };
   if (r[name]) r[name]();
 }
 document.querySelectorAll('.nav-item').forEach(el => el.addEventListener('click', () => showPage(el.dataset.page)));
@@ -1396,9 +1440,27 @@ function _rh(id) {
 function _dh(id) {
   return `<span class="dh" onmousedown="startDrag(event,'${id}')">⠿</span>`;
 }
+function startWidgetRename(id, el) {
+  const cur = _wname(id);
+  const inp = document.createElement('input');
+  inp.value = cur; inp.className = 'form-input';
+  inp.style.cssText = 'font-size:11px;font-weight:700;height:22px;padding:2px 6px;width:130px;text-transform:uppercase;letter-spacing:0.7px;';
+  const finish = () => {
+    const v = inp.value.trim();
+    if (!D.widgetNames) D.widgetNames = {};
+    if (v && v !== WIDGET_NAMES[id]) D.widgetNames[id] = v;
+    else delete D.widgetNames[id];
+    save(); renderDashboard();
+  };
+  inp.onblur = finish;
+  inp.onkeydown = e => { if (e.key==='Enter') { e.preventDefault(); inp.blur(); } if (e.key==='Escape') { inp.onblur=null; renderDashboard(); } };
+  el.replaceWith(inp); inp.focus(); inp.select();
+}
 
 // 모바일 위젯 순서/높이 조절
-const WIDGET_ORDER = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals'];
+const WIDGET_ORDER = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'];
+const WIDGET_NAMES = {tasks:'Unclassified Works',progress:'Progress',records:'Recent Records',secrets:'Secure Notes',dayplan:"Today's Schedule",routine:'Routine',eisenhower:'🎯 Eisenhower',manuals:'📎 메뉴얼 바로가기',projects_timeline:'프로젝트 타임라인'};
+function _wname(id){return(D.widgetNames&&D.widgetNames[id])||WIDGET_NAMES[id]||id;}
 function _mwc(id) {
   return `<div class="mobile-widget-controls">
     <button class="mwc-btn" onclick="mwcMove('${id}',-1)">▲</button>
@@ -1554,6 +1616,7 @@ function renderDashboard() {
   }).join('') : '<div class="empty"><div class="empty-text">No subjects</div></div>';
 
   const todayPlans = (D.dayplan||[]).filter(p=>p.date===_dayplanViewDate).sort(_sortByTime);
+  const _dpViewProjects = (D.projects||[]).filter(p=>(p.dates||[]).includes(_dayplanViewDate));
   const dayplanHtml = `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:5px 8px;background:var(--surface2);border-radius:var(--radius-sm);">
     <button onclick="shiftDayplanDate(-1)" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:15px;padding:0 2px;line-height:1;">◀</button>
     <span style="flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--text);">${_dpLabel(_dayplanViewDate)}</span>
@@ -1561,6 +1624,7 @@ function renderDashboard() {
     <button onclick="shiftDayplanDate(1)" style="background:none;border:none;cursor:pointer;color:var(--primary);font-size:15px;padding:0 2px;line-height:1;">▶</button>
     ${_dayplanViewDate!==td?`<button onclick="_dayplanViewDate=todayStr();renderDashboard()" class="btn btn-secondary btn-sm" style="font-size:10px;padding:2px 6px;">Today</button>`:''}
   </div>
+  ${_dpViewProjects.length?`<div style="margin-bottom:8px;">${_dpViewProjects.map(pr=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--proj-green-dim);border-radius:var(--radius-sm);margin-bottom:4px;border-left:2px solid var(--proj-green);cursor:pointer;" onclick="openProjectDetail('${pr.id}')" title="프로젝트 클릭 시 상세보기"><span style="font-size:11px;color:var(--proj-green);font-weight:700;">📁 프로젝트</span><span style="flex:1;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.title}</span>${pr.status?`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:var(--proj-green-dim);color:var(--proj-green);font-weight:600;">${{'planning':'기획','active':'진행중','completed':'완료','on-hold':'보류'}[pr.status]||pr.status}</span>`:''}</div>`).join('')}</div>`:''}
   <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
     ${_timeSelectHtml('dayplan-startTime')}${_timeSelectHtml('dayplan-endTime')}
     <input type="text" id="dayplan-text" class="form-input" placeholder="Enter task..." style="flex:1;" onkeydown="if(event.key==='Enter')addDayplanItem()">
@@ -1627,7 +1691,7 @@ function renderDashboard() {
     <div class="dash-widget" id="dw-tasks" style="grid-column:${L.tasks.cs} / span ${L.tasks.col};grid-row:${L.tasks.rs} / span ${L.tasks.row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">${_dh('tasks')}Unclassified Works</div>${_mwc('tasks')}
+          <div class="card-title" ondblclick="startWidgetRename('tasks',this)">${_dh('tasks')}${_wname('tasks')}</div>${_mwc('tasks')}
           <button class="btn btn-secondary btn-sm" onclick="moveTasksToDayplan()" title="Move checked items to Today's Schedule" style="font-size:11px;">→ Schedule</button>
         </div>
         <div class="widget-body">${tasksHtml}</div>
@@ -1636,14 +1700,14 @@ function renderDashboard() {
     </div>
     <div class="dash-widget" id="dw-progress" style="grid-column:${L.progress.cs} / span ${L.progress.col};grid-row:${L.progress.rs} / span ${L.progress.row};">
       <div class="card">
-        <div class="card-header"><div class="card-title">${_dh('progress')}Progress</div>${_mwc('progress')}</div>
+        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('progress',this)">${_dh('progress')}${_wname('progress')}</div>${_mwc('progress')}</div>
         <div class="widget-body">${progressHtml}</div>
       </div>
       ${_rh('progress')}
     </div>
     <div class="dash-widget" id="dw-records" style="grid-column:${L.records.cs} / span ${L.records.col};grid-row:${L.records.rs} / span ${L.records.row};">
       <div class="card">
-        <div class="card-header"><div class="card-title">${_dh('records')}Recent Records</div>${_mwc('records')}</div>
+        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('records',this)">${_dh('records')}${_wname('records')}</div>${_mwc('records')}</div>
         <div class="widget-body">${recsHtml}</div>
       </div>
       ${_rh('records')}
@@ -1651,7 +1715,7 @@ function renderDashboard() {
     <div class="dash-widget" id="dw-secrets" style="grid-column:${L.secrets.cs} / span ${L.secrets.col};grid-row:${L.secrets.rs} / span ${L.secrets.row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">${_dh('secrets')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px;color:var(--text-lighter);"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Secure Notes</div>
+          <div class="card-title" ondblclick="startWidgetRename('secrets',this)">${_dh('secrets')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px;color:var(--text-lighter);"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${_wname('secrets')}</div>
           ${_mwc('secrets')}<div id="dash-secrets-actions"></div>
         </div>
         <div class="secrets-content-wrap">
@@ -1666,7 +1730,7 @@ function renderDashboard() {
     <div class="dash-widget" id="dw-dayplan" style="grid-column:${L.dayplan.cs} / span ${L.dayplan.col};grid-row:${L.dayplan.rs} / span ${L.dayplan.row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">${_dh('dayplan')}Today's Schedule</div>
+          <div class="card-title" ondblclick="startWidgetRename('dayplan',this)">${_dh('dayplan')}${_wname('dayplan')}</div>
           ${_mwc('dayplan')}<button class="btn btn-ghost btn-sm" onclick="goToCalendarDate('${_dayplanViewDate}')" title="Open in Calendar" style="font-size:13px;padding:2px 6px;">📅</button>
           <button class="btn btn-secondary btn-sm" onclick="moveDayplanToTasks()" title="Move today's schedule to Unclassified Works" style="font-size:11px;">→ Unclassified</button>
         </div>
@@ -1676,7 +1740,7 @@ function renderDashboard() {
     </div>
     <div class="dash-widget" id="dw-routine" style="grid-column:${L.routine.cs} / span ${L.routine.col};grid-row:${L.routine.rs} / span ${L.routine.row};">
       <div class="card">
-        <div class="card-header"><div class="card-title">${_dh('routine')}Routine</div>${_mwc('routine')}</div>
+        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('routine',this)">${_dh('routine')}${_wname('routine')}</div>${_mwc('routine')}</div>
         <div class="widget-body">${routineHtml}</div>
       </div>
       ${_rh('routine')}
@@ -1684,7 +1748,7 @@ function renderDashboard() {
     <div class="dash-widget" id="dw-eisenhower" style="grid-column:${L.eisenhower.cs} / span ${L.eisenhower.col};grid-row:${L.eisenhower.rs} / span ${L.eisenhower.row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title" onclick="showPage('eisenhower')" style="cursor:pointer;">${_dh('eisenhower')}🎯 Eisenhower</div>${_mwc('eisenhower')}
+          <div class="card-title" onclick="showPage('eisenhower')" ondblclick="startWidgetRename('eisenhower',this)" style="cursor:pointer;">${_dh('eisenhower')}${_wname('eisenhower')}</div>${_mwc('eisenhower')}
         </div>
         <div class="widget-body">${(()=>{
           const quads=[
@@ -1709,9 +1773,8 @@ function renderDashboard() {
     <div class="dash-widget" id="dw-manuals" style="grid-column:${L.manuals.cs} / span ${L.manuals.col};grid-row:${L.manuals.rs} / span ${L.manuals.row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">${_dh('manuals')}📎 메뉴얼 바로가기</div>
+          <div class="card-title" ondblclick="startWidgetRename('manuals',this)">${_dh('manuals')}${_wname('manuals')}</div>
           <div style="display:flex;gap:6px;align-items:center;">
-            ${_manualsEditMode ? `<button class="btn btn-primary btn-sm" onclick="_manualsExitEditMode()" style="font-size:11px;">완료</button>` : ''}
             ${_mwc('manuals')}
           </div>
         </div>
@@ -1735,14 +1798,46 @@ function renderDashboard() {
         </div>
       </div>
       ${_rh('manuals')}
+    </div>
+    <div class="dash-widget" id="dw-projects_timeline" style="grid-column:${L.projects_timeline.cs} / span ${L.projects_timeline.col};grid-row:${L.projects_timeline.rs} / span ${L.projects_timeline.row};">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" ondblclick="startWidgetRename('projects_timeline',this)" onclick="showPage('projects')" style="cursor:pointer;">${_dh('projects_timeline')}${_wname('projects_timeline')}</div>
+          ${_mwc('projects_timeline')}
+        </div>
+        <div class="widget-body" style="overflow-y:auto;max-height:340px;">${(()=>{
+          const now=new Date(), y=now.getFullYear(), m=now.getMonth();
+          const months=[{y,m},{y:m===11?y+1:y,m:m===11?0:m+1}];
+          const MNAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          const projs=D.projects||[];
+          if(!projs.length) return '<div class="empty"><div class="empty-text">프로젝트가 없습니다</div></div>';
+          return months.map(({y:my,m:mm})=>{
+            const daysInMonth=new Date(my,mm+1,0).getDate();
+            const relevantProjs=projs.filter(pr=>(pr.dates||[]).some(d=>{const dt=new Date(d);return dt.getFullYear()===my&&dt.getMonth()===mm;}));
+            if(!relevantProjs.length) return `<div style="font-size:11px;font-weight:700;color:var(--text-light);margin:8px 0 4px;">${MNAMES[mm]} ${my}</div><div style="font-size:11px;color:var(--text-lighter);margin-bottom:8px;">이달 프로젝트 없음</div>`;
+            const dayW=Math.min(12,Math.max(6,Math.floor(120/daysInMonth)));
+            const headerDays=Array.from({length:daysInMonth},(_,i)=>i+1).map(d=>`<div style="width:${dayW}px;text-align:center;font-size:8px;color:var(--text-lighter);flex-shrink:0;">${d%5===0?d:''}</div>`).join('');
+            const bars=relevantProjs.map(pr=>{
+              const projDates=(pr.dates||[]).filter(d=>{const dt=new Date(d);return dt.getFullYear()===my&&dt.getMonth()===mm;}).map(d=>parseInt(d.slice(8)));
+              const cells=Array.from({length:daysInMonth},(_,i)=>`<div style="width:${dayW}px;height:10px;background:${projDates.includes(i+1)?'var(--proj-green)':'transparent'};border-radius:2px;flex-shrink:0;" title="${projDates.includes(i+1)?pr.title:''}"></div>`).join('');
+              return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;cursor:pointer;" onclick="openProjectDetail('${pr.id}')"><div style="width:90px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);flex-shrink:0;" title="${pr.title}">${pr.title}</div><div style="display:flex;gap:1px;">${cells}</div></div>`;
+            }).join('');
+            return `<div style="font-size:11px;font-weight:700;color:var(--text-light);margin:8px 0 4px;">${MNAMES[mm]} ${my}</div><div style="overflow-x:auto;"><div style="display:flex;gap:6px;margin-bottom:4px;padding-left:96px;">${headerDays}</div>${bars}</div>`;
+          }).join('');
+        })()}</div>
+      </div>
+      ${_rh('projects_timeline')}
     </div>`;
   renderSecrets();
 
   // 모바일 위젯 순서 적용
-  if (window.innerWidth <= 768 && D.mobileOrder) {
+  if (window.innerWidth <= 768) {
+    if (!D.mobileOrder) D.mobileOrder = [...WIDGET_ORDER];
+    else {
+      WIDGET_ORDER.forEach(id=>{ if(!D.mobileOrder.includes(id)) D.mobileOrder.push(id); });
+    }
     const grid = document.getElementById('dash-grid');
-    const order = D.mobileOrder;
-    order.forEach(id => {
+    D.mobileOrder.forEach(id => {
       const el = document.getElementById('dw-' + id);
       if (el) grid.appendChild(el);
     });
@@ -1756,6 +1851,59 @@ function renderDashboard() {
     });
   }
   _initManualsWidget();
+  if (window.innerWidth <= 768) _initMobileDrag();
+}
+
+function _initMobileDrag() {
+  const grid = document.getElementById('dash-grid');
+  if (!grid) return;
+  let _touchDragId = null, _touchStartY = 0, _touchClone = null;
+  grid.querySelectorAll('.mobile-widget-controls').forEach(ctrl => {
+    const widget = ctrl.closest('.dash-widget');
+    if (!widget) return;
+    const id = widget.id.replace('dw-', '');
+    ctrl.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      _touchDragId = id;
+      _touchStartY = e.touches[0].clientY;
+      widget.style.opacity = '0.6';
+      e.stopPropagation();
+    }, {passive: true});
+    ctrl.addEventListener('touchmove', e => {
+      if (!_touchDragId || _touchDragId !== id) return;
+      const cy = e.touches[0].clientY;
+      const widgets = [...grid.querySelectorAll('.dash-widget')];
+      widgets.forEach(w => w.style.outline = '');
+      const target = widgets.find(w => {
+        const r = w.getBoundingClientRect();
+        return cy >= r.top && cy <= r.bottom && w.id !== 'dw-' + _touchDragId;
+      });
+      if (target) target.style.outline = '2px solid var(--proj-green)';
+      e.preventDefault();
+    }, {passive: false});
+    ctrl.addEventListener('touchend', e => {
+      if (!_touchDragId || _touchDragId !== id) return;
+      widget.style.opacity = '';
+      grid.querySelectorAll('.dash-widget').forEach(w => w.style.outline = '');
+      const cy = e.changedTouches[0].clientY;
+      const widgets = [...grid.querySelectorAll('.dash-widget')];
+      const target = widgets.find(w => {
+        const r = w.getBoundingClientRect();
+        return cy >= r.top && cy <= r.bottom && w.id !== 'dw-' + _touchDragId;
+      });
+      if (target) {
+        const targetId = target.id.replace('dw-', '');
+        if (!D.mobileOrder) D.mobileOrder = [...WIDGET_ORDER];
+        const arr = D.mobileOrder;
+        const fi = arr.indexOf(_touchDragId), ti = arr.indexOf(targetId);
+        if (fi >= 0 && ti >= 0 && fi !== ti) {
+          arr.splice(fi, 1); arr.splice(ti, 0, _touchDragId);
+          save(); renderDashboard();
+        }
+      }
+      _touchDragId = null;
+    });
+  });
 }
 
 function saveManualLink() {
@@ -1954,18 +2102,19 @@ function saveEvent() {
   const title = document.getElementById('evt-title').value.trim();
   if (!title) { alert('Please enter a title'); return; }
   const editId = document.getElementById('event-edit-id').value;
+  const _evtDocNum = (document.getElementById('evt-docnumber')||{}).value?.trim()||'';
   if (editId) {
     const p = D.dayplan.find(p=>p.id===editId);
-    if (p) { p.text=title; p.date=document.getElementById('evt-date').value; p.startTime=_getTimeSelect('evt-time'); p.endTime=_getTimeSelect('evt-end-time')||''; p.desc=document.getElementById('evt-desc').value.trim(); p.urgency=_dialValues['evt_urgency']||3; p.importance=_dialValues['evt_importance']||3; }
+    if (p) { p.text=title; p.date=document.getElementById('evt-date').value; p.startTime=_getTimeSelect('evt-time'); p.endTime=_getTimeSelect('evt-end-time')||''; p.desc=document.getElementById('evt-desc').value.trim(); p.urgency=_dialValues['evt_urgency']||3; p.importance=_dialValues['evt_importance']||3; if(_evtDocNum) p.docNumber=_evtDocNum; }
   } else {
-    D.dayplan.push({ id:uid(), text:title, date:document.getElementById('evt-date').value, startTime:_getTimeSelect('evt-time'), endTime:_getTimeSelect('evt-end-time')||'', done:false, desc:document.getElementById('evt-desc').value.trim(), note:'', steps:[], urgency:_dialValues['evt_urgency']||3, importance:_dialValues['evt_importance']||3 });
+    D.dayplan.push({ id:uid(), text:title, date:document.getElementById('evt-date').value, startTime:_getTimeSelect('evt-time'), endTime:_getTimeSelect('evt-end-time')||'', done:false, desc:document.getElementById('evt-desc').value.trim(), note:'', steps:[], urgency:_dialValues['evt_urgency']||3, importance:_dialValues['evt_importance']||3, docNumber:_evtDocNum });
   }
   save(); closeModal('event-modal'); clearEventForm();
   renderCalendar();
   if (document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
 }
 function clearEventForm() {
-  ['evt-title','evt-desc'].forEach(id=>document.getElementById(id).value='');
+  ['evt-title','evt-desc','evt-docnumber'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   _setTimeSelect('evt-time',''); _setTimeSelect('evt-end-time','');
   document.getElementById('event-edit-id').value='';
   document.getElementById('event-modal-title').textContent='Add Event';
@@ -2061,6 +2210,7 @@ function editDayplanItem(id){
   document.getElementById('dayplan-edit-text').value=p.text;
   document.getElementById('dayplan-edit-desc').value=p.desc||'';
   document.getElementById('dayplan-edit-note').value=p.note||'';
+  const _ddnEl=document.getElementById('dayplan-edit-docnumber'); if(_ddnEl) _ddnEl.value=p.docNumber||'';
   _editSteps=(p.steps||[]).map(s=>({...s}));
   renderDayplanStepList();
   renderDialUI('dayplan-urgency-dial','dayplan',p.urgency||3,'urgency');
@@ -2075,6 +2225,7 @@ function saveDayplanEdit(){
   p.text=text;
   p.desc=document.getElementById('dayplan-edit-desc').value.trim();
   p.note=document.getElementById('dayplan-edit-note').value.trim();
+  p.docNumber=(document.getElementById('dayplan-edit-docnumber')||{}).value?.trim()||p.docNumber||'';
   p.steps=_editSteps;
   p.urgency=_dialValues['dayplan_urgency']||3;
   p.importance=_dialValues['dayplan_importance']||3;
@@ -2198,10 +2349,13 @@ function renderMonthly() {
     const dd=new Date(calYear,calMonth,d);
     const sun=dd.getDay()===0, sat=dd.getDay()===6;
     const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort(_sortByTime);
-    html+=`<div class="cal-day ${isToday(dd)?'is-today':''} ${ds===_dayplanViewDate?'is-selected':''}" onclick="calDayClick('${ds}')">
-      <div class="day-num" style="${sun?'color:var(--danger)':sat?'color:var(--primary)':''}">${d}</div>
-      ${plans.slice(0,2).map(p=>`<div style="font-size:10px;color:var(--secondary);background:rgba(0,180,120,0.08);padding:1px 4px;border-radius:3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.text}">${_dpTimeLabel(p)} ${p.text}</div>`).join('')}
-      ${plans.length>2?`<div class="text-xs text-lighter">+${plans.length-2} tasks</div>`:''}
+    const dayProjs=(D.projects||[]).filter(p=>(p.dates||[]).includes(ds));
+    html+=`<div class="cal-day ${isToday(dd)?'is-today':''} ${ds===_dayplanViewDate?'is-selected':''}" onclick="calDayClick('${ds}')" style="${dayProjs.length?'background:rgba(5,150,105,0.05);':''}">
+      <div class="day-num" style="${sun?'color:var(--danger)':sat?'color:var(--primary)':''}">${d}${dayProjs.length?`<span style="font-size:8px;color:var(--proj-green);margin-left:2px;">●</span>`:''}
+      </div>
+      ${dayProjs.slice(0,1).map(pr=>`<div style="font-size:10px;color:var(--proj-green);background:rgba(5,150,105,0.1);padding:1px 4px;border-radius:3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;" onclick="event.stopPropagation();openProjectDetail('${pr.id}')" title="${pr.title}">📁 ${pr.title}</div>`).join('')}
+      ${plans.slice(0,1).map(p=>`<div style="font-size:10px;color:var(--secondary);background:rgba(0,180,120,0.08);padding:1px 4px;border-radius:3px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${p.text}">${_dpTimeLabel(p)} ${p.text}</div>`).join('')}
+      ${(plans.length+dayProjs.length)>2?`<div class="text-xs text-lighter">+${plans.length+dayProjs.length-2} more</div>`:''}
     </div>`;
   }
   const total=Math.ceil((startDow+last.getDate())/7)*7;
@@ -2221,7 +2375,38 @@ function setDayplanDate(ds){
   else if(calView==='daily') renderDaily();
   else renderMonthly();
 }
+let _weekCompact = false;
+function toggleWeekCompact() {
+  _weekCompact = !_weekCompact;
+  const btn = document.getElementById('week-compact-btn');
+  if (btn) { btn.textContent = _weekCompact ? '☰ 상세' : '☰ 간략'; btn.classList.toggle('btn-primary', _weekCompact); btn.classList.toggle('btn-secondary', !_weekCompact); }
+  renderWeekly();
+}
+function renderWeeklyCompact() {
+  const we=new Date(calWeekOf); we.setDate(we.getDate()+6);
+  document.getElementById('cal-week-title').textContent=`${fmtDate(calWeekOf)} ~ ${fmtDate(we)}`;
+  const days=[];
+  for(let d=0;d<7;d++){const dd=new Date(calWeekOf);dd.setDate(dd.getDate()+d);const ds=fmtDate(dd);days.push({dd,ds,d,isT:isToday(dd)});}
+  let html='<div style="display:flex;flex-direction:column;gap:4px;">';
+  days.forEach(({dd,ds,d,isT})=>{
+    const plans=(D.dayplan||[]).filter(p=>p.date===ds).sort(_sortByTime);
+    const projItems=(D.projects||[]).filter(p=>(p.dates||[]).includes(ds));
+    const total=plans.length+projItems.length;
+    html+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:7px 10px;background:${isT?'var(--primary-dim)':'var(--surface2)'};border-radius:var(--radius-sm);border-left:3px solid ${isT?'var(--primary)':'var(--border)'};">
+      <div style="width:52px;flex-shrink:0;"><div style="font-size:12px;font-weight:700;color:${d===0?'var(--danger)':d===6?'var(--primary)':'var(--text)'};">${DAYS_KO[d]}</div><div style="font-size:11px;color:var(--text-lighter);">${dd.getDate()}일</div></div>
+      <div style="flex:1;min-width:0;">
+        ${!total?'<div style="font-size:11px;color:var(--text-lighter);">—</div>':''}
+        ${projItems.map(pr=>`<div style="font-size:11px;color:var(--proj-green);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📁 ${pr.title}</div>`).join('')}
+        ${plans.slice(0,3).map(p=>`<div style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${p.done?'opacity:0.5;text-decoration:line-through;':''}color:var(--text-light);">${p.startTime?p.startTime+' ':''}${p.text}</div>`).join('')}
+        ${plans.length>3?`<div style="font-size:10px;color:var(--text-lighter);">+${plans.length-3} more</div>`:''}
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  document.getElementById('cal-week-grid').innerHTML=html;
+}
 function renderWeekly() {
+  if(_weekCompact){renderWeeklyCompact();return;}
   const START_H=7, END_H=20;
   const TOTAL_SLOTS=(END_H-START_H+1)*12; // 168 (07:00~20:55)
   const SH=12; // slot height px
@@ -3827,6 +4012,225 @@ try {
   console.error('Firebase init:', e);
   _startApp();
 }
+
+// ── PROJECTS ──
+const PROJECT_STATUSES = {planning:'기획',active:'진행중',completed:'완료','on-hold':'보류'};
+const PROJECT_COLORS = ['#059669','#0d9488','#0891b2','#16a34a','#2563eb'];
+
+let _editingProjectId = null, _projectDateTags = [], _projectSteps = [], _projectContentType = 'memo', _projectSpreadsheet = [];
+
+function renderProjects() {
+  const projs = D.projects || [];
+  const el = document.getElementById('projects-list');
+  if (!el) return;
+  if (!projs.length) { el.innerHTML = '<div class="empty" style="margin-top:40px;"><div class="empty-text">프로젝트가 없습니다. 새 프로젝트를 추가해보세요.</div></div>'; return; }
+  el.innerHTML = projs.map(p => {
+    const statusLabel = PROJECT_STATUSES[p.status] || p.status || '';
+    const statusColor = {planning:'var(--primary)',active:'var(--proj-green)',completed:'var(--text-lighter)','on-hold':'var(--warning)'}[p.status] || 'var(--text-lighter)';
+    const dateRange = p.startDate && p.endDate ? `${p.startDate} ~ ${p.endDate}` : (p.dates||[]).length ? `${p.dates[0]}${p.dates.length>1?' 외 '+(p.dates.length-1)+'일':''}` : '날짜 없음';
+    return `<div class="card" style="margin-bottom:10px;cursor:pointer;border-left:3px solid ${p.color||'var(--proj-green)'};" onclick="openProjectDetail('${p.id}')">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:14px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.title}</span>
+            ${statusLabel?`<span style="font-size:11px;padding:1px 8px;border-radius:8px;background:${statusColor}22;color:${statusColor};font-weight:600;flex-shrink:0;">${statusLabel}</span>`:''}
+          </div>
+          <div style="display:flex;gap:12px;font-size:11px;color:var(--text-lighter);">
+            ${p.docNumber?`<span>📄 ${p.docNumber}</span>`:''}
+            <span>📅 ${dateRange}</span>
+            ${(p.steps||[]).length?`<span>✅ ${p.steps.filter(s=>s.done).length}/${p.steps.length}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openProjectModal('${p.id}')" style="font-size:11px;">수정</button>
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteProject('${p.id}')" style="font-size:11px;">삭제</button>
+        </div>
+      </div>
+      ${(p.steps||[]).length?`<div style="margin-top:8px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;"><div style="height:100%;width:${Math.round(p.steps.filter(s=>s.done).length/p.steps.length*100)}%;background:${p.color||'var(--proj-green)'};border-radius:2px;transition:width .3s;"></div></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openProjectModal(id) {
+  _editingProjectId = id || null;
+  let p = id ? (D.projects||[]).find(x=>x.id===id) : null;
+  _projectDateTags = p ? [...(p.dates||[])] : [];
+  _projectSteps = p ? (p.steps||[]).map(s=>({...s})) : [];
+  _projectContentType = p ? (p.contentType||'memo') : 'memo';
+  _projectSpreadsheet = p && p.content && typeof p.content === 'object' && Array.isArray(p.content) ? p.content.map(r=>[...r]) : Array.from({length:6},()=>Array(10).fill(''));
+
+  const mo = document.getElementById('project-modal');
+  if (!mo) return;
+  document.getElementById('proj-title').value = p ? p.title : '';
+  document.getElementById('proj-status').value = p ? (p.status||'planning') : 'planning';
+  document.getElementById('proj-docnumber').value = p ? (p.docNumber||'') : '';
+  document.getElementById('proj-color').value = p ? (p.color||'#059669') : '#059669';
+  document.getElementById('proj-content-memo').value = (p && _projectContentType==='memo') ? (typeof p.content==='string'?p.content:'') : '';
+  _renderProjectDateTags();
+  _renderProjectSteps();
+  _renderProjectSpreadsheet();
+  _setProjectContentType(_projectContentType);
+  openModal('project-modal');
+}
+
+function openProjectDetail(id) {
+  const p = (D.projects||[]).find(x=>x.id===id);
+  if (!p) return;
+  openProjectModal(id);
+}
+
+function _renderProjectDateTags() {
+  const el = document.getElementById('proj-date-tags');
+  if (!el) return;
+  el.innerHTML = _projectDateTags.map((d,i)=>`<span style="display:inline-flex;align-items:center;gap:3px;background:var(--proj-green-dim);color:var(--proj-green);border-radius:12px;padding:2px 8px;font-size:11px;margin:2px;font-weight:600;">${d}<button onclick="_removeProjDate(${i})" style="background:none;border:none;cursor:pointer;color:var(--proj-green);font-size:13px;line-height:1;padding:0 0 0 2px;">×</button></span>`).join('');
+}
+function _removeProjDate(i) { _projectDateTags.splice(i,1); _renderProjectDateTags(); }
+function _addProjDate() {
+  const inp = document.getElementById('proj-date-input');
+  if (!inp || !inp.value) return;
+  if (!_projectDateTags.includes(inp.value)) { _projectDateTags.push(inp.value); _projectDateTags.sort(); }
+  inp.value = ''; _renderProjectDateTags();
+}
+
+function _setProjectContentType(type) {
+  _projectContentType = type;
+  document.getElementById('proj-memo-area').style.display = type==='memo' ? 'block' : 'none';
+  document.getElementById('proj-sheet-area').style.display = type==='sheet' ? 'block' : 'none';
+  document.getElementById('proj-tab-memo').classList.toggle('btn-primary', type==='memo');
+  document.getElementById('proj-tab-memo').classList.toggle('btn-secondary', type!=='memo');
+  document.getElementById('proj-tab-sheet').classList.toggle('btn-primary', type==='sheet');
+  document.getElementById('proj-tab-sheet').classList.toggle('btn-secondary', type!=='sheet');
+  if (type==='sheet') _renderProjectSpreadsheet();
+}
+
+function _renderProjectSpreadsheet() {
+  const el = document.getElementById('proj-sheet-grid');
+  if (!el) return;
+  const COLS=10, ROWS=6;
+  if (!_projectSpreadsheet || _projectSpreadsheet.length < ROWS) _projectSpreadsheet = Array.from({length:ROWS},(_,r)=>Array.from({length:COLS},(_,c)=>(_projectSpreadsheet[r]||[])[c]||''));
+  let html = '<table style="border-collapse:collapse;width:100%;table-layout:fixed;">';
+  for(let r=0;r<ROWS;r++){
+    html+='<tr>';
+    for(let c=0;c<COLS;c++){
+      html+=`<td style="border:1px solid var(--border);padding:0;"><input type="text" value="${(_projectSpreadsheet[r][c]||'').replace(/"/g,'&quot;')}" style="width:100%;border:none;padding:4px 5px;font-size:11px;font-family:inherit;background:transparent;color:var(--text);outline:none;" onchange="_projSheetChange(${r},${c},this.value)" onkeydown="_projSheetKey(event,${r},${c})"></td>`;
+    }
+    html+='</tr>';
+  }
+  html+='</table>';
+  el.innerHTML = html;
+}
+function _projSheetChange(r,c,v){ if(_projectSpreadsheet[r]) _projectSpreadsheet[r][c]=v; }
+function _projSheetKey(e,r,c){
+  const COLS=10,ROWS=6;
+  const grid=document.getElementById('proj-sheet-grid');
+  if(!grid)return;
+  const inputs=[...grid.querySelectorAll('input')];
+  const idx=r*COLS+c;
+  if(e.key==='Tab'){e.preventDefault();const ni=inputs[e.shiftKey?idx-1:idx+1];if(ni)ni.focus();}
+  else if(e.key==='Enter'){e.preventDefault();const ni=inputs[idx+COLS];if(ni)ni.focus();}
+}
+
+function _renderProjectSteps() {
+  const el = document.getElementById('proj-step-list');
+  if (!el) return;
+  el.innerHTML = _projectSteps.length ? _projectSteps.map((s,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:4px 0;">
+      <input type="checkbox" ${s.done?'checked':''} onchange="_projStepToggle(${i})">
+      <span style="flex:1;font-size:12px;${s.done?'text-decoration:line-through;opacity:0.6;':''}">${s.text}</span>
+      <button onclick="_projStepDelete(${i})" style="background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:14px;">×</button>
+    </div>`).join('') : '<div style="font-size:11px;color:var(--text-lighter);">단계가 없습니다</div>';
+}
+function _projStepToggle(i){_projectSteps[i].done=!_projectSteps[i].done;_renderProjectSteps();}
+function _projStepDelete(i){_projectSteps.splice(i,1);_renderProjectSteps();}
+function _addProjStep(){
+  const inp=document.getElementById('proj-step-input');
+  if(!inp||!inp.value.trim())return;
+  _projectSteps.push({id:uid(),text:inp.value.trim(),done:false});
+  inp.value='';_renderProjectSteps();
+}
+
+function saveProject() {
+  const title = document.getElementById('proj-title').value.trim();
+  if (!title) { alert('프로젝트 제목을 입력하세요'); return; }
+  const color = document.getElementById('proj-color').value;
+  const status = document.getElementById('proj-status').value;
+  const docNumber = document.getElementById('proj-docnumber').value.trim();
+  let content;
+  if (_projectContentType === 'memo') content = document.getElementById('proj-content-memo').value;
+  else { const grid=document.getElementById('proj-sheet-grid'); grid&&grid.querySelectorAll('input').forEach((inp,idx)=>{const r=Math.floor(idx/10),c=idx%10;if(_projectSpreadsheet[r])_projectSpreadsheet[r][c]=inp.value;}); content=_projectSpreadsheet.map(r=>[...r]); }
+  const allDates = [..._projectDateTags];
+  const sd = allDates.length ? allDates[0] : '';
+  const ed = allDates.length > 1 ? allDates[allDates.length-1] : sd;
+  if (_editingProjectId) {
+    const p = (D.projects||[]).find(x=>x.id===_editingProjectId);
+    if (p) { Object.assign(p, {title,color,status,docNumber,dates:allDates,startDate:sd,endDate:ed,contentType:_projectContentType,content,steps:_projectSteps}); }
+  } else {
+    if (!D.projects) D.projects = [];
+    D.projects.push({id:uid(),title,color,status,docNumber,dates:allDates,startDate:sd,endDate:ed,contentType:_projectContentType,content,steps:_projectSteps});
+  }
+  save(); closeModal('project-modal'); renderProjects();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+}
+
+async function deleteProject(id) {
+  if (!await confirmDelete('This project')) return;
+  D.projects = (D.projects||[]).filter(p=>p.id!==id);
+  save(); renderProjects();
+  if(document.getElementById('page-dashboard').classList.contains('active')) renderDashboard();
+}
 </script>
+
+<!-- Project Modal -->
+<div class="modal-overlay" id="project-modal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <div class="modal-title" id="project-modal-title">프로젝트</div>
+      <button class="modal-close" onclick="closeModal('project-modal')">&#215;</button>
+    </div>
+    <div class="g2">
+      <div class="form-group"><label class="form-label">제목</label><input type="text" class="form-input" id="proj-title" placeholder="프로젝트 제목"></div>
+      <div class="form-group"><label class="form-label">상태</label>
+        <select class="form-select" id="proj-status">
+          <option value="planning">기획</option><option value="active">진행중</option>
+          <option value="completed">완료</option><option value="on-hold">보류</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2">
+      <div class="form-group"><label class="form-label">문서번호</label><input type="text" class="form-input" id="proj-docnumber" placeholder="문서번호 (선택)"></div>
+      <div class="form-group"><label class="form-label">색상</label><input type="color" class="form-input" id="proj-color" value="#059669" style="height:38px;padding:2px 4px;cursor:pointer;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">날짜 (다중선택)</label>
+      <div style="display:flex;gap:6px;margin-bottom:6px;">
+        <input type="date" class="form-input" id="proj-date-input" style="flex:1;">
+        <button class="btn btn-secondary btn-sm" onclick="_addProjDate()">+ 추가</button>
+      </div>
+      <div id="proj-date-tags" style="min-height:28px;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">콘텐츠</label>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <button id="proj-tab-memo" class="btn btn-primary btn-sm" onclick="_setProjectContentType('memo')">메모장</button>
+        <button id="proj-tab-sheet" class="btn btn-secondary btn-sm" onclick="_setProjectContentType('sheet')">스프레드시트</button>
+      </div>
+      <div id="proj-memo-area"><textarea class="form-textarea" id="proj-content-memo" placeholder="내용을 입력하세요..." style="min-height:120px;"></textarea></div>
+      <div id="proj-sheet-area" style="display:none;overflow-x:auto;"><div id="proj-sheet-grid"></div></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">단계/체크리스트</label>
+      <div style="display:flex;gap:6px;margin-bottom:8px;">
+        <input type="text" class="form-input" id="proj-step-input" placeholder="단계 추가..." onkeydown="if(event.key==='Enter'){_addProjStep();event.preventDefault();}">
+        <button class="btn btn-secondary btn-sm" onclick="_addProjStep()">+ 추가</button>
+      </div>
+      <div id="proj-step-list"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('project-modal')">취소</button>
+      <button class="btn btn-primary" onclick="saveProject()">저장</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
