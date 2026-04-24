@@ -53,7 +53,7 @@
 }
 @media (min-width: 769px) and (max-width: 1024px) {
   body { font-size: clamp(12px, 1.4vw, 14px); }
-  #dash-grid { grid-template-columns: repeat(4, 1fr) !important; }
+  #dash-grid { grid-template-columns: repeat(12, 1fr) !important; }
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px;-webkit-font-smoothing:antialiased;}
@@ -317,13 +317,44 @@ body{font-family:'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;b
 .text-sm{font-size:13px;}.text-xs{font-size:11.5px;}.text-light{color:var(--text-light);}.text-lighter{color:var(--text-lighter);}
 .fw-600{font-weight:600;}.fw-700{font-weight:700;}.w-full{width:100%;}
 
-/* ── Dashboard Grid ── */
-.dash-grid{display:grid;grid-template-columns:repeat(8,1fr);grid-auto-rows:220px;gap:14px;align-content:start;}
+/* ── Dashboard Grid (24-col, 3x finer than before) ── */
+.dash-grid{display:grid;grid-template-columns:repeat(24,1fr);grid-auto-rows:73px;gap:6px;align-content:start;}
 .dash-widget{position:relative;overflow:visible;}
-.dash-widget .card{height:100%;display:flex;flex-direction:column;overflow:hidden;}
-.dash-widget .card .card-header{flex-shrink:0;}
+.dash-widget .card{height:100%;display:flex;flex-direction:column;overflow:hidden;padding:14px;}
+.dash-widget .card-header{margin-bottom:10px;flex-shrink:0;}
+.dash-widget .card-title{font-size:11px;}
 .dash-widget .widget-body{flex:1;overflow-y:auto;min-height:0;padding-bottom:4px;}
 .dash-widget .secrets-content-wrap{flex:1;min-height:0;overflow-y:auto;}
+.widget-close{width:22px;height:22px;border-radius:4px;border:none;background:transparent;cursor:pointer;color:var(--text-lighter);font-size:15px;line-height:1;display:inline-flex;align-items:center;justify-content:center;margin-left:auto;}
+.widget-close:hover{background:var(--danger-dim);color:var(--danger);}
+
+/* ── Dashboard Tabs ── */
+.dash-tabs-bar{display:flex;align-items:center;gap:4px;margin-bottom:14px;padding:4px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);flex-wrap:wrap;}
+.dash-tab{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:5px;font-size:12.5px;font-weight:500;color:var(--text-lighter);cursor:pointer;transition:all 0.15s;user-select:none;}
+.dash-tab:hover{background:var(--surface);color:var(--text-light);}
+.dash-tab.active{background:var(--surface);color:var(--text);font-weight:600;box-shadow:var(--shadow);}
+.dash-tab-close{border:none;background:transparent;font-size:14px;line-height:1;color:var(--text-lighter);cursor:pointer;padding:0 2px;opacity:0;transition:opacity 0.12s;}
+.dash-tab:hover .dash-tab-close{opacity:1;}
+.dash-tab-close:hover{color:var(--danger);}
+.dash-tab-add{border:none;background:transparent;font-size:14px;color:var(--text-lighter);cursor:pointer;padding:4px 10px;border-radius:5px;}
+.dash-tab-add:hover{background:var(--surface);color:var(--primary);}
+.dash-tab-name-input{border:1px solid var(--primary);background:var(--surface);padding:2px 6px;font-size:12.5px;font-weight:600;border-radius:4px;font-family:inherit;outline:none;width:120px;}
+.widget-add-menu{position:absolute;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-md);min-width:200px;max-height:320px;overflow-y:auto;}
+
+/* ── Sidebar drag ── */
+.nav-item.drag-ghost{opacity:0.35;}
+.nav-item.drag-over-top{box-shadow:inset 0 2px 0 rgba(255,255,255,0.7);}
+.nav-item.drag-over-bot{box-shadow:inset 0 -2px 0 rgba(255,255,255,0.7);}
+
+/* ── Clock picker modal ── */
+.clock-picker-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.clock-face-svg{touch-action:none;user-select:none;}
+.clock-time-display{font-size:32px;font-weight:700;color:var(--text);letter-spacing:1px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:4px;}
+.clock-time-part{padding:4px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s;}
+.clock-time-part.active{background:var(--primary-dim);color:var(--primary);}
+.clock-ampm{display:flex;gap:4px;}
+.clock-ampm button{padding:6px 14px;border:1px solid var(--border);background:var(--surface);color:var(--text-light);border-radius:var(--radius-sm);cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit;}
+.clock-ampm button.active{background:var(--primary);color:#fff;border-color:var(--primary);}
 /* Resize handles */
 .rh{position:absolute;z-index:30;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;}
 .dash-widget:hover .rh{opacity:1;}
@@ -506,7 +537,7 @@ body.locked .btn-editing{display:none!important;}
       <span class="nav-label">Notes</span>
     </div>
     <div class="nav-item" data-page="eisenhower" title="Eisenhower Matrix">
-      <span class="nav-icon">🎯</span>
+      <span class="nav-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
       <span class="nav-label">Eisenhower</span>
     </div>
     <div class="nav-item" data-page="projects" title="Projects">
@@ -544,7 +575,65 @@ body.locked .btn-editing{display:none!important;}
       <div id="dash-search-dropdown" style="display:none;position:absolute;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:320px;overflow-y:auto;width:100%;top:calc(100% + 4px);left:0;"></div>
     </div>
   </div>
+  <div class="dash-tabs-bar" id="dash-tabs-bar"></div>
+  <div style="display:flex;justify-content:flex-end;gap:6px;margin-bottom:10px;position:relative;">
+    <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleAddWidgetMenu(this)" style="font-size:11.5px;">+ Widget</button>
+    <div class="widget-add-menu" id="widget-add-menu" style="display:none;top:100%;right:0;margin-top:4px;"></div>
+  </div>
   <div class="dash-grid" id="dash-grid"></div>
+</div>
+
+<!-- Dayplan Add modal (analog clock time entry) -->
+<div class="modal-overlay" id="dayplan-add-modal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <div class="modal-title">Add Schedule Item</div>
+      <button class="modal-close" onclick="closeModal('dayplan-add-modal')">&#215;</button>
+    </div>
+    <div class="form-group"><label class="form-label">Task</label>
+      <input type="text" class="form-input" id="dayplan-add-text" placeholder="What's happening?" onkeydown="if(event.key==='Enter'){event.preventDefault();saveDayplanAdd();}">
+    </div>
+    <div class="g2">
+      <div class="form-group"><label class="form-label">Start</label>
+        <button type="button" class="btn btn-secondary" id="dayplan-add-start-btn" onclick="openClockPicker('dayplan-add-start', document.getElementById('dayplan-add-start-btn').dataset.v||'')" style="width:100%;justify-content:center;font-variant-numeric:tabular-nums;">—:—</button>
+      </div>
+      <div class="form-group"><label class="form-label">End</label>
+        <button type="button" class="btn btn-secondary" id="dayplan-add-end-btn" onclick="openClockPicker('dayplan-add-end', document.getElementById('dayplan-add-end-btn').dataset.v||'')" style="width:100%;justify-content:center;font-variant-numeric:tabular-nums;">—:—</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('dayplan-add-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDayplanAdd()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Analog clock picker modal -->
+<div class="modal-overlay" id="clock-picker-modal" style="z-index:1100;">
+  <div class="modal modal-sm" style="max-width:320px;">
+    <div class="modal-header">
+      <div class="modal-title">Pick Time</div>
+      <button class="modal-close" onclick="closeModal('clock-picker-modal')">&#215;</button>
+    </div>
+    <div class="clock-picker-wrap">
+      <div class="clock-time-display">
+        <span id="clock-part-h" class="clock-time-part active" onclick="clockSetMode('hour')">09</span>
+        <span style="color:var(--text-lighter);">:</span>
+        <span id="clock-part-m" class="clock-time-part" onclick="clockSetMode('minute')">00</span>
+      </div>
+      <div class="clock-ampm">
+        <button type="button" id="clock-am-btn" class="active" onclick="clockSetAmPm('am')">AM</button>
+        <button type="button" id="clock-pm-btn" onclick="clockSetAmPm('pm')">PM</button>
+      </div>
+      <div id="clock-face"></div>
+      <div style="font-size:11px;color:var(--text-lighter);text-align:center;">Drag around the dial to set the time</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="clockClear()">Clear</button>
+      <button class="btn btn-secondary" onclick="closeModal('clock-picker-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="clockConfirm()">OK</button>
+    </div>
+  </div>
 </div>
 
 <!-- CALENDAR -->
@@ -1261,7 +1350,23 @@ let D = {
   dashLayout: { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6}, projects_timeline:{col:8,row:2,cs:1,rs:7} },
   manuals: [{title:"대왕중학교 학교규정", url:"https://drive.google.com/file/d/1ZO2OqQqjE4qY4ihrNfEHOVCt97anlxWO/view?usp=sharing"}],
   projects: [],
-  widgetNames: {}
+  widgetNames: {},
+  dashboards: null,
+  activeDashboardId: null,
+  sidebarOrder: null
+};
+
+// Default layout on the new 24-column / 73px-row grid (3x finer)
+const _DASH_DEFAULT_LAYOUT = {
+  tasks:{col:12,row:3,cs:13,rs:1},
+  progress:{col:12,row:3,cs:1,rs:4},
+  records:{col:12,row:3,cs:13,rs:4},
+  secrets:{col:24,row:3,cs:1,rs:7},
+  dayplan:{col:24,row:3,cs:1,rs:10},
+  routine:{col:12,row:3,cs:1,rs:1},
+  eisenhower:{col:24,row:3,cs:1,rs:13},
+  manuals:{col:12,row:3,cs:1,rs:16},
+  projects_timeline:{col:24,row:6,cs:1,rs:19}
 };
 
 // ── DIAL / TIME HELPERS ──
@@ -1373,15 +1478,67 @@ function _fixData() {
     });
     D.events = [];
   }
-  const _dlDef = { tasks:{col:4,row:1,cs:5,rs:1}, progress:{col:4,row:1,cs:1,rs:2}, records:{col:4,row:1,cs:5,rs:2}, secrets:{col:8,row:1,cs:1,rs:3}, dayplan:{col:8,row:1,cs:1,rs:4}, routine:{col:4,row:1,cs:1,rs:1}, eisenhower:{col:8,row:1,cs:1,rs:5}, manuals:{col:4,row:1,cs:1,rs:6}, projects_timeline:{col:8,row:2,cs:1,rs:7} };
+  const _dlDef = _DASH_DEFAULT_LAYOUT;
+  const KNOWN_WIDGETS = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'];
+  // Normalize legacy D.dashLayout (may be 8-col grid). Scale 3x if detected.
   if (!D.dashLayout) D.dashLayout = {};
-  ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'].forEach(w => {
+  KNOWN_WIDGETS.forEach(w => {
     const v = D.dashLayout[w];
-    if (!v || typeof v !== 'object') D.dashLayout[w] = typeof v === 'number' ? {col:v, row:1, cs:_dlDef[w].cs, rs:_dlDef[w].rs} : _dlDef[w];
+    if (!v || typeof v !== 'object') D.dashLayout[w] = typeof v === 'number' ? {col:v, row:1, cs:_dlDef[w].cs, rs:_dlDef[w].rs} : {..._dlDef[w]};
     if (!D.dashLayout[w].row) D.dashLayout[w].row = 1;
     if (!D.dashLayout[w].cs) D.dashLayout[w].cs = _dlDef[w].cs;
     if (!D.dashLayout[w].rs) D.dashLayout[w].rs = _dlDef[w].rs;
   });
+  // Migrate to multi-dashboard model
+  if (!D.dashboards || !Array.isArray(D.dashboards) || !D.dashboards.length) {
+    // If the legacy layout looks like the old 8-col scale, multiply
+    const sample = D.dashLayout.tasks || {};
+    const isOld = !D.dashboardsMigratedV2 && (sample.col||0) <= 8 && (sample.cs||0) <= 9;
+    const scaled = {};
+    KNOWN_WIDGETS.forEach(w => {
+      const L = D.dashLayout[w] || _dlDef[w];
+      if (isOld) {
+        scaled[w] = {
+          col: Math.max(1, (L.col||1) * 3),
+          row: Math.max(1, (L.row||1) * 3),
+          cs: ((L.cs||1) - 1) * 3 + 1,
+          rs: ((L.rs||1) - 1) * 3 + 1
+        };
+      } else {
+        scaled[w] = {col:L.col||_dlDef[w].col, row:L.row||_dlDef[w].row, cs:L.cs||_dlDef[w].cs, rs:L.rs||_dlDef[w].rs};
+      }
+    });
+    D.dashboards = [{
+      id: 'd-main',
+      name: 'Dashboard',
+      layout: scaled,
+      widgets: [...KNOWN_WIDGETS],
+      widgetNames: {...(D.widgetNames||{})}
+    }];
+    D.activeDashboardId = 'd-main';
+    D.dashboardsMigratedV2 = true;
+  } else {
+    D.dashboards.forEach(d => {
+      if (!d.layout) d.layout = {};
+      if (!d.widgets) d.widgets = [...KNOWN_WIDGETS];
+      if (!d.widgetNames) d.widgetNames = {};
+      KNOWN_WIDGETS.forEach(w => {
+        if (!d.layout[w]) d.layout[w] = {..._dlDef[w]};
+        if (!d.layout[w].row) d.layout[w].row = _dlDef[w].row;
+        if (!d.layout[w].cs) d.layout[w].cs = _dlDef[w].cs;
+        if (!d.layout[w].rs) d.layout[w].rs = _dlDef[w].rs;
+      });
+      // Drop widgets not known
+      d.widgets = d.widgets.filter(w => KNOWN_WIDGETS.includes(w));
+    });
+  }
+  if (!D.activeDashboardId || !D.dashboards.find(d=>d.id===D.activeDashboardId)) {
+    D.activeDashboardId = D.dashboards[0].id;
+  }
+}
+
+function _curDashboard() {
+  return (D.dashboards && D.dashboards.find(d => d.id === D.activeDashboardId)) || (D.dashboards && D.dashboards[0]) || null;
 }
 
 function load() {
@@ -1428,7 +1585,8 @@ function isToday(d) { return fmtDate(d) === todayStr(); }
 function fmtKo(d) { const x=new Date(d); const MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${MN[x.getMonth()]} ${x.getDate()}, ${x.getFullYear()} (${DAYS_KO[x.getDay()]})`; }
 
 // ── DASHBOARD ──
-const GRID_ROW_H = 220 + 14; // grid-auto-rows + gap
+const GRID_COLS = 24;
+const GRID_ROW_H = 73 + 6; // grid-auto-rows + gap
 let _rs = null, _drag = null;
 
 function _rh(id) {
@@ -1445,11 +1603,14 @@ function startWidgetRename(id, el) {
   const inp = document.createElement('input');
   inp.value = cur; inp.className = 'form-input';
   inp.style.cssText = 'font-size:11px;font-weight:700;height:22px;padding:2px 6px;width:130px;text-transform:uppercase;letter-spacing:0.7px;';
+  const d = _curDashboard();
   const finish = () => {
     const v = inp.value.trim();
-    if (!D.widgetNames) D.widgetNames = {};
-    if (v && v !== WIDGET_NAMES[id]) D.widgetNames[id] = v;
-    else delete D.widgetNames[id];
+    if (d) {
+      if (!d.widgetNames) d.widgetNames = {};
+      if (v && v !== WIDGET_NAMES[id]) d.widgetNames[id] = v;
+      else delete d.widgetNames[id];
+    }
     save(); renderDashboard();
   };
   inp.onblur = finish;
@@ -1460,7 +1621,7 @@ function startWidgetRename(id, el) {
 // 모바일 위젯 순서/높이 조절
 const WIDGET_ORDER = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'];
 const WIDGET_NAMES = {tasks:'Unclassified Works',progress:'Progress',records:'Recent Records',secrets:'Secure Notes',dayplan:"Today's Schedule",routine:'Routine',eisenhower:'🎯 Eisenhower',manuals:'📎 메뉴얼 바로가기',projects_timeline:'프로젝트 타임라인'};
-function _wname(id){return(D.widgetNames&&D.widgetNames[id])||WIDGET_NAMES[id]||id;}
+function _wname(id){const d=_curDashboard();return(d&&d.widgetNames&&d.widgetNames[id])||(D.widgetNames&&D.widgetNames[id])||WIDGET_NAMES[id]||id;}
 function _mwc(id) {
   return `<div class="mobile-widget-controls">
     <button class="mwc-btn" onclick="mwcMove('${id}',-1)">▲</button>
@@ -1485,11 +1646,14 @@ function mwcHeight(id, dir) {
   save(); renderDashboard();
 }
 
+function _curLayout() { const d=_curDashboard(); return d ? d.layout : null; }
+
 function startDrag(e, id) {
   e.preventDefault(); e.stopPropagation();
+  const L = _curLayout(); if (!L || !L[id]) return;
   const gr = document.getElementById('dash-grid').getBoundingClientRect();
-  const colW = (gr.width + 14) / 8;
-  _drag = { id, x0:e.clientX, y0:e.clientY, cs0:D.dashLayout[id].cs, rs0:D.dashLayout[id].rs, colW };
+  const colW = (gr.width + 6) / GRID_COLS;
+  _drag = { id, x0:e.clientX, y0:e.clientY, cs0:L[id].cs, rs0:L[id].rs, colW };
   document.getElementById('dw-'+id).classList.add('dw-dragging');
   document.body.style.cursor = 'grabbing';
   document.body.style.userSelect = 'none';
@@ -1497,34 +1661,36 @@ function startDrag(e, id) {
 
 function startResize(e, id, dir) {
   e.preventDefault(); e.stopPropagation();
+  const L = _curLayout(); if (!L || !L[id]) return;
   const gr = document.getElementById('dash-grid').getBoundingClientRect();
-  const colW = (gr.width + 14) / 8;
-  _rs = { id, dir, x0:e.clientX, y0:e.clientY, c0:D.dashLayout[id].col, r0:D.dashLayout[id].row, colW };
+  const colW = (gr.width + 6) / GRID_COLS;
+  _rs = { id, dir, x0:e.clientX, y0:e.clientY, c0:L[id].col, r0:L[id].row, colW };
   document.body.style.cursor = dir==='e'?'col-resize':dir==='s'?'row-resize':'nwse-resize';
   document.body.style.userSelect = 'none';
   document.querySelectorAll('.rh-'+dir+', .rh-se').forEach(h=>h.classList.add('active'));
 }
 
 document.addEventListener('mousemove', e => {
-  if (_rs) {
+  const L = _curLayout();
+  if (_rs && L && L[_rs.id]) {
     const {id,dir,x0,y0,c0,r0,colW} = _rs;
     let c=c0, r=r0;
-    if (dir==='e'||dir==='se') c = Math.min(9-D.dashLayout[id].cs, Math.max(1, c0 + Math.round((e.clientX-x0)/colW)));
-    if (dir==='s'||dir==='se') r = Math.min(4, Math.max(1, r0 + Math.round((e.clientY-y0)/GRID_ROW_H)));
-    if (c!==D.dashLayout[id].col || r!==D.dashLayout[id].row) {
-      D.dashLayout[id].col=c; D.dashLayout[id].row=r;
+    if (dir==='e'||dir==='se') c = Math.min(GRID_COLS+1-L[id].cs, Math.max(1, c0 + Math.round((e.clientX-x0)/colW)));
+    if (dir==='s'||dir==='se') r = Math.min(48, Math.max(1, r0 + Math.round((e.clientY-y0)/GRID_ROW_H)));
+    if (c!==L[id].col || r!==L[id].row) {
+      L[id].col=c; L[id].row=r;
       const el = document.getElementById('dw-'+id);
-      if (el) { el.style.gridColumn=D.dashLayout[id].cs+' / span '+c; el.style.gridRow=D.dashLayout[id].rs+' / span '+r; }
+      if (el) { el.style.gridColumn=L[id].cs+' / span '+c; el.style.gridRow=L[id].rs+' / span '+r; }
     }
   }
-  if (_drag) {
+  if (_drag && L && L[_drag.id]) {
     const {id,x0,y0,cs0,rs0,colW} = _drag;
-    const cs = Math.min(9-D.dashLayout[id].col, Math.max(1, cs0 + Math.round((e.clientX-x0)/colW)));
+    const cs = Math.min(GRID_COLS+1-L[id].col, Math.max(1, cs0 + Math.round((e.clientX-x0)/colW)));
     const rs = Math.max(1, rs0 + Math.round((e.clientY-y0)/GRID_ROW_H));
-    if (cs!==D.dashLayout[id].cs || rs!==D.dashLayout[id].rs) {
-      D.dashLayout[id].cs=cs; D.dashLayout[id].rs=rs;
+    if (cs!==L[id].cs || rs!==L[id].rs) {
+      L[id].cs=cs; L[id].rs=rs;
       const el = document.getElementById('dw-'+id);
-      if (el) { el.style.gridColumn=cs+' / span '+D.dashLayout[id].col; el.style.gridRow=rs+' / span '+D.dashLayout[id].row; }
+      if (el) { el.style.gridColumn=cs+' / span '+L[id].col; el.style.gridRow=rs+' / span '+L[id].row; }
     }
   }
 });
@@ -1556,7 +1722,10 @@ function shiftDayplanDate(delta){
 }
 
 function renderDashboard() {
-  const L = D.dashLayout;
+  renderDashboardTabs();
+  const dash = _curDashboard();
+  const L = dash ? dash.layout : D.dashLayout;
+  const activeWidgets = dash ? dash.widgets : ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'];
   const td = todayStr();
   document.getElementById('today-chip').textContent = fmtKo(TODAY);
 
@@ -1626,9 +1795,7 @@ function renderDashboard() {
   </div>
   ${_dpViewProjects.length?`<div style="margin-bottom:8px;">${_dpViewProjects.map(pr=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--proj-green-dim);border-radius:var(--radius-sm);margin-bottom:4px;border-left:2px solid var(--proj-green);cursor:pointer;" onclick="openProjectDetail('${pr.id}')" title="프로젝트 클릭 시 상세보기"><span style="font-size:11px;color:var(--proj-green);font-weight:700;">📁 프로젝트</span><span style="flex:1;font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${pr.title}</span>${pr.status?`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:var(--proj-green-dim);color:var(--proj-green);font-weight:600;">${{'planning':'기획','active':'진행중','completed':'완료','on-hold':'보류'}[pr.status]||pr.status}</span>`:''}</div>`).join('')}</div>`:''}
   <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;">
-    ${_timeSelectHtml('dayplan-startTime')}${_timeSelectHtml('dayplan-endTime')}
-    <input type="text" id="dayplan-text" class="form-input" placeholder="Enter task..." style="flex:1;" onkeydown="if(event.key==='Enter')addDayplanItem()">
-    <button class="btn btn-primary btn-sm" onclick="addDayplanItem()">Add</button>
+    <button class="btn btn-primary btn-sm" onclick="openDayplanAddModal()" style="flex:1;justify-content:center;">+ Add schedule item</button>
   </div>
   ${todayPlans.length ? todayPlans.map(p=>{const timeLabel=_dpTimeLabel(p);return `
     <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer;border-left:2px solid var(--secondary);" ondblclick="editDayplanItem('${p.id}')" title="Double-click to edit">
@@ -1686,37 +1853,44 @@ function renderDashboard() {
     </div>`;
   }).join('') : '<div class="empty"><div class="empty-text">No routines added</div></div>'}`;
 
-  // Build grid
-  document.getElementById('dash-grid').innerHTML = `
-    <div class="dash-widget" id="dw-tasks" style="grid-column:${L.tasks.cs} / span ${L.tasks.col};grid-row:${L.tasks.rs} / span ${L.tasks.row};">
+  // Per-widget HTML fragments — only those in activeWidgets are rendered
+  const _xBtn = id => `<button class="widget-close" onclick="deleteWidget('${id}')" title="Remove widget">&#215;</button>`;
+  const _safeL = id => L[id] || _DASH_DEFAULT_LAYOUT[id] || {col:12,row:3,cs:1,rs:1};
+  const _widgetHtml = {};
+  _widgetHtml.tasks = `
+    <div class="dash-widget" id="dw-tasks" style="grid-column:${_safeL('tasks').cs} / span ${_safeL('tasks').col};grid-row:${_safeL('tasks').rs} / span ${_safeL('tasks').row};">
       <div class="card">
         <div class="card-header">
           <div class="card-title" ondblclick="startWidgetRename('tasks',this)">${_dh('tasks')}${_wname('tasks')}</div>${_mwc('tasks')}
           <button class="btn btn-secondary btn-sm" onclick="moveTasksToDayplan()" title="Move checked items to Today's Schedule" style="font-size:11px;">→ Schedule</button>
+          ${_xBtn('tasks')}
         </div>
         <div class="widget-body">${tasksHtml}</div>
       </div>
       ${_rh('tasks')}
-    </div>
-    <div class="dash-widget" id="dw-progress" style="grid-column:${L.progress.cs} / span ${L.progress.col};grid-row:${L.progress.rs} / span ${L.progress.row};">
+    </div>`;
+  _widgetHtml.progress = `
+    <div class="dash-widget" id="dw-progress" style="grid-column:${_safeL('progress').cs} / span ${_safeL('progress').col};grid-row:${_safeL('progress').rs} / span ${_safeL('progress').row};">
       <div class="card">
-        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('progress',this)">${_dh('progress')}${_wname('progress')}</div>${_mwc('progress')}</div>
+        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('progress',this)">${_dh('progress')}${_wname('progress')}</div>${_mwc('progress')}${_xBtn('progress')}</div>
         <div class="widget-body">${progressHtml}</div>
       </div>
       ${_rh('progress')}
-    </div>
-    <div class="dash-widget" id="dw-records" style="grid-column:${L.records.cs} / span ${L.records.col};grid-row:${L.records.rs} / span ${L.records.row};">
+    </div>`;
+  _widgetHtml.records = `
+    <div class="dash-widget" id="dw-records" style="grid-column:${_safeL('records').cs} / span ${_safeL('records').col};grid-row:${_safeL('records').rs} / span ${_safeL('records').row};">
       <div class="card">
-        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('records',this)">${_dh('records')}${_wname('records')}</div>${_mwc('records')}</div>
+        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('records',this)">${_dh('records')}${_wname('records')}</div>${_mwc('records')}${_xBtn('records')}</div>
         <div class="widget-body">${recsHtml}</div>
       </div>
       ${_rh('records')}
-    </div>
-    <div class="dash-widget" id="dw-secrets" style="grid-column:${L.secrets.cs} / span ${L.secrets.col};grid-row:${L.secrets.rs} / span ${L.secrets.row};">
+    </div>`;
+  _widgetHtml.secrets = `
+    <div class="dash-widget" id="dw-secrets" style="grid-column:${_safeL('secrets').cs} / span ${_safeL('secrets').col};grid-row:${_safeL('secrets').rs} / span ${_safeL('secrets').row};">
       <div class="card">
         <div class="card-header">
           <div class="card-title" ondblclick="startWidgetRename('secrets',this)">${_dh('secrets')}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:-1px;color:var(--text-lighter);"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>${_wname('secrets')}</div>
-          ${_mwc('secrets')}<div id="dash-secrets-actions"></div>
+          ${_mwc('secrets')}<div id="dash-secrets-actions"></div>${_xBtn('secrets')}
         </div>
         <div class="secrets-content-wrap">
           <div id="dash-secrets-items"></div>
@@ -1726,29 +1900,33 @@ function renderDashboard() {
         </div>
       </div>
       ${_rh('secrets')}
-    </div>
-    <div class="dash-widget" id="dw-dayplan" style="grid-column:${L.dayplan.cs} / span ${L.dayplan.col};grid-row:${L.dayplan.rs} / span ${L.dayplan.row};">
+    </div>`;
+  _widgetHtml.dayplan = `
+    <div class="dash-widget" id="dw-dayplan" style="grid-column:${_safeL('dayplan').cs} / span ${_safeL('dayplan').col};grid-row:${_safeL('dayplan').rs} / span ${_safeL('dayplan').row};">
       <div class="card">
         <div class="card-header">
           <div class="card-title" ondblclick="startWidgetRename('dayplan',this)">${_dh('dayplan')}${_wname('dayplan')}</div>
           ${_mwc('dayplan')}<button class="btn btn-ghost btn-sm" onclick="goToCalendarDate('${_dayplanViewDate}')" title="Open in Calendar" style="font-size:13px;padding:2px 6px;">📅</button>
           <button class="btn btn-secondary btn-sm" onclick="moveDayplanToTasks()" title="Move today's schedule to Unclassified Works" style="font-size:11px;">→ Unclassified</button>
+          ${_xBtn('dayplan')}
         </div>
         <div class="widget-body">${dayplanHtml}</div>
       </div>
       ${_rh('dayplan')}
-    </div>
-    <div class="dash-widget" id="dw-routine" style="grid-column:${L.routine.cs} / span ${L.routine.col};grid-row:${L.routine.rs} / span ${L.routine.row};">
+    </div>`;
+  _widgetHtml.routine = `
+    <div class="dash-widget" id="dw-routine" style="grid-column:${_safeL('routine').cs} / span ${_safeL('routine').col};grid-row:${_safeL('routine').rs} / span ${_safeL('routine').row};">
       <div class="card">
-        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('routine',this)">${_dh('routine')}${_wname('routine')}</div>${_mwc('routine')}</div>
+        <div class="card-header"><div class="card-title" ondblclick="startWidgetRename('routine',this)">${_dh('routine')}${_wname('routine')}</div>${_mwc('routine')}${_xBtn('routine')}</div>
         <div class="widget-body">${routineHtml}</div>
       </div>
       ${_rh('routine')}
-    </div>
-    <div class="dash-widget" id="dw-eisenhower" style="grid-column:${L.eisenhower.cs} / span ${L.eisenhower.col};grid-row:${L.eisenhower.rs} / span ${L.eisenhower.row};">
+    </div>`;
+  _widgetHtml.eisenhower = `
+    <div class="dash-widget" id="dw-eisenhower" style="grid-column:${_safeL('eisenhower').cs} / span ${_safeL('eisenhower').col};grid-row:${_safeL('eisenhower').rs} / span ${_safeL('eisenhower').row};">
       <div class="card">
         <div class="card-header">
-          <div class="card-title" onclick="showPage('eisenhower')" ondblclick="startWidgetRename('eisenhower',this)" style="cursor:pointer;">${_dh('eisenhower')}${_wname('eisenhower')}</div>${_mwc('eisenhower')}
+          <div class="card-title" onclick="showPage('eisenhower')" ondblclick="startWidgetRename('eisenhower',this)" style="cursor:pointer;">${_dh('eisenhower')}${_wname('eisenhower')}</div>${_mwc('eisenhower')}${_xBtn('eisenhower')}
         </div>
         <div class="widget-body">${(()=>{
           const quads=[
@@ -1769,13 +1947,14 @@ function renderDashboard() {
         })()}</div>
       </div>
       ${_rh('eisenhower')}
-    </div>
-    <div class="dash-widget" id="dw-manuals" style="grid-column:${L.manuals.cs} / span ${L.manuals.col};grid-row:${L.manuals.rs} / span ${L.manuals.row};">
+    </div>`;
+  _widgetHtml.manuals = `
+    <div class="dash-widget" id="dw-manuals" style="grid-column:${_safeL('manuals').cs} / span ${_safeL('manuals').col};grid-row:${_safeL('manuals').rs} / span ${_safeL('manuals').row};">
       <div class="card">
         <div class="card-header">
           <div class="card-title" ondblclick="startWidgetRename('manuals',this)">${_dh('manuals')}${_wname('manuals')}</div>
           <div style="display:flex;gap:6px;align-items:center;">
-            ${_mwc('manuals')}
+            ${_mwc('manuals')}${_xBtn('manuals')}
           </div>
         </div>
         <div class="widget-body">
@@ -1798,12 +1977,13 @@ function renderDashboard() {
         </div>
       </div>
       ${_rh('manuals')}
-    </div>
-    <div class="dash-widget" id="dw-projects_timeline" style="grid-column:${L.projects_timeline.cs} / span ${L.projects_timeline.col};grid-row:${L.projects_timeline.rs} / span ${L.projects_timeline.row};">
+    </div>`;
+  _widgetHtml.projects_timeline = `
+    <div class="dash-widget" id="dw-projects_timeline" style="grid-column:${_safeL('projects_timeline').cs} / span ${_safeL('projects_timeline').col};grid-row:${_safeL('projects_timeline').rs} / span ${_safeL('projects_timeline').row};">
       <div class="card">
         <div class="card-header">
           <div class="card-title" ondblclick="startWidgetRename('projects_timeline',this)" onclick="showPage('projects')" style="cursor:pointer;">${_dh('projects_timeline')}${_wname('projects_timeline')}</div>
-          ${_mwc('projects_timeline')}
+          ${_mwc('projects_timeline')}${_xBtn('projects_timeline')}
         </div>
         <div class="widget-body" style="overflow-y:auto;max-height:340px;">${(()=>{
           const now=new Date(), y=now.getFullYear(), m=now.getMonth();
@@ -1828,16 +2008,19 @@ function renderDashboard() {
       </div>
       ${_rh('projects_timeline')}
     </div>`;
+
+  // Assemble grid: only render widgets listed in the active dashboard
+  document.getElementById('dash-grid').innerHTML = activeWidgets.map(id => _widgetHtml[id] || '').join('');
   renderSecrets();
 
   // 모바일 위젯 순서 적용
   if (window.innerWidth <= 768) {
-    if (!D.mobileOrder) D.mobileOrder = [...WIDGET_ORDER];
+    if (!D.mobileOrder) D.mobileOrder = [...activeWidgets];
     else {
-      WIDGET_ORDER.forEach(id=>{ if(!D.mobileOrder.includes(id)) D.mobileOrder.push(id); });
+      activeWidgets.forEach(id=>{ if(!D.mobileOrder.includes(id)) D.mobileOrder.push(id); });
     }
     const grid = document.getElementById('dash-grid');
-    D.mobileOrder.forEach(id => {
+    D.mobileOrder.filter(id => activeWidgets.includes(id)).forEach(id => {
       const el = document.getElementById('dw-' + id);
       if (el) grid.appendChild(el);
     });
@@ -1947,6 +2130,322 @@ let _manualsEditMode = false;
 function _manualsEnterEditMode() { _manualsEditMode = true; renderDashboard(); }
 function _manualsExitEditMode() { _manualsEditMode = false; renderDashboard(); }
 
+// ── DASHBOARD TABS + WIDGET ADD/REMOVE ──────────────────────────────
+function renderDashboardTabs() {
+  const bar = document.getElementById('dash-tabs-bar');
+  if (!bar) return;
+  if (!D.dashboards || !D.dashboards.length) { bar.innerHTML = ''; return; }
+  const cur = _curDashboard();
+  const tabs = D.dashboards.map(d => {
+    const active = d.id === cur.id;
+    const closeBtn = D.dashboards.length > 1
+      ? `<button class="dash-tab-close" onclick="event.stopPropagation();deleteDashboard('${d.id}')" title="Delete dashboard">&#215;</button>`
+      : '';
+    return `<div class="dash-tab${active?' active':''}" data-id="${d.id}" onclick="switchDashboard('${d.id}')" ondblclick="event.stopPropagation();renameDashboardInline('${d.id}',this)">
+      <span class="dash-tab-name" title="Double-click to rename">${_escapeHtml(d.name||'Dashboard')}</span>
+      ${closeBtn}
+    </div>`;
+  }).join('');
+  bar.innerHTML = tabs + `<button class="dash-tab-add" onclick="addDashboard()" title="Add dashboard">+</button>`;
+}
+function _escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function switchDashboard(id) {
+  if (!D.dashboards || !D.dashboards.find(d=>d.id===id)) return;
+  D.activeDashboardId = id;
+  save();
+  renderDashboard();
+}
+
+function addDashboard() {
+  const WIDGET_ORDER_ALL = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'];
+  const name = prompt('New dashboard name:', 'Dashboard ' + ((D.dashboards||[]).length + 1));
+  if (!name || !name.trim()) return;
+  const layout = {};
+  WIDGET_ORDER_ALL.forEach(w => { layout[w] = {..._DASH_DEFAULT_LAYOUT[w]}; });
+  const d = { id: 'd-' + uid(), name: name.trim(), layout, widgets: [...WIDGET_ORDER_ALL], widgetNames: {} };
+  D.dashboards.push(d);
+  D.activeDashboardId = d.id;
+  save();
+  renderDashboard();
+}
+
+async function deleteDashboard(id) {
+  if (!D.dashboards || D.dashboards.length <= 1) { alert('At least one dashboard must remain.'); return; }
+  if (!await confirmDelete('This dashboard')) return;
+  D.dashboards = D.dashboards.filter(d => d.id !== id);
+  if (D.activeDashboardId === id) D.activeDashboardId = D.dashboards[0].id;
+  save();
+  renderDashboard();
+}
+
+function renameDashboardInline(id, el) {
+  const d = D.dashboards.find(x => x.id === id);
+  if (!d) return;
+  const tab = el.closest('.dash-tab');
+  if (!tab) return;
+  const nameSpan = tab.querySelector('.dash-tab-name');
+  const inp = document.createElement('input');
+  inp.className = 'dash-tab-name-input';
+  inp.value = d.name;
+  const finish = (save_) => {
+    const v = inp.value.trim();
+    if (save_ && v) { d.name = v; save(); }
+    renderDashboard();
+  };
+  inp.onblur = () => finish(true);
+  inp.onkeydown = e => {
+    if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+    if (e.key === 'Escape') { inp.onblur = null; renderDashboard(); }
+  };
+  nameSpan.replaceWith(inp);
+  inp.focus(); inp.select();
+}
+
+function deleteWidget(id) {
+  const d = _curDashboard();
+  if (!d) return;
+  d.widgets = (d.widgets||[]).filter(x => x !== id);
+  save();
+  renderDashboard();
+}
+
+function addWidget(id) {
+  const d = _curDashboard();
+  if (!d) return;
+  if (!d.widgets) d.widgets = [];
+  if (!d.widgets.includes(id)) {
+    d.widgets.push(id);
+    if (!d.layout[id]) d.layout[id] = {..._DASH_DEFAULT_LAYOUT[id]};
+  }
+  save();
+  renderDashboard();
+}
+
+function toggleAddWidgetMenu(btn) {
+  const menu = document.getElementById('widget-add-menu');
+  if (!menu) return;
+  if (menu.style.display === 'block') { menu.style.display = 'none'; return; }
+  const d = _curDashboard();
+  const ALL = ['tasks','progress','records','secrets','dayplan','routine','eisenhower','manuals','projects_timeline'];
+  const available = ALL.filter(w => !(d && d.widgets && d.widgets.includes(w)));
+  if (!available.length) {
+    menu.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-lighter);">All widgets are added.</div>';
+  } else {
+    menu.innerHTML = available.map(w => `
+      <div onclick="addWidget('${w}');document.getElementById('widget-add-menu').style.display='none';"
+           style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);"
+           onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+        + ${_escapeHtml(WIDGET_NAMES[w]||w)}
+      </div>`).join('');
+  }
+  menu.style.display = 'block';
+}
+document.addEventListener('click', e => {
+  const menu = document.getElementById('widget-add-menu');
+  if (menu && menu.style.display === 'block' && !menu.contains(e.target)) {
+    // ignore clicks on the "+ Widget" button itself (it toggles on its own)
+    if (!e.target.closest('button') || e.target.textContent.trim() !== '+ Widget') {
+      menu.style.display = 'none';
+    }
+  }
+});
+
+// ── DAYPLAN ADD MODAL (uses analog clock for times) ─────────────────
+let _dayplanAddState = { start: '', end: '' };
+function openDayplanAddModal() {
+  _dayplanAddState = { start: '', end: '' };
+  document.getElementById('dayplan-add-text').value = '';
+  _refreshDayplanAddButtons();
+  openModal('dayplan-add-modal');
+  setTimeout(()=>{const i=document.getElementById('dayplan-add-text');if(i)i.focus();}, 60);
+}
+function _refreshDayplanAddButtons() {
+  const s = document.getElementById('dayplan-add-start-btn');
+  const e = document.getElementById('dayplan-add-end-btn');
+  if (s) { s.textContent = _dayplanAddState.start || '—:—'; s.dataset.v = _dayplanAddState.start || ''; }
+  if (e) { e.textContent = _dayplanAddState.end || '—:—'; e.dataset.v = _dayplanAddState.end || ''; }
+}
+function saveDayplanAdd() {
+  const text = document.getElementById('dayplan-add-text').value.trim();
+  if (!text) { alert('Please enter a task.'); return; }
+  D.dayplan.push({
+    id: uid(), date: _dayplanViewDate,
+    startTime: _dayplanAddState.start || '',
+    endTime: _dayplanAddState.end || '',
+    text, done:false, desc:'', note:'', steps:[], urgency:3, importance:3
+  });
+  save();
+  closeModal('dayplan-add-modal');
+  renderDashboard();
+}
+
+// ── ANALOG CLOCK PICKER ─────────────────────────────────────────────
+let _clockState = { pickerId:null, hour:9, minute:0, mode:'hour', ampm:'am', dragging:false, onConfirm:null };
+function openClockPicker(pickerId, currentValue) {
+  const parts = (currentValue || '').split(':');
+  let h = parseInt(parts[0], 10); let m = parseInt(parts[1], 10);
+  if (isNaN(h)) h = new Date().getHours();
+  if (isNaN(m)) m = 0;
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  _clockState = { pickerId, hour: h12, minute: m, mode: 'hour', ampm, dragging: false, onConfirm: null };
+  // Wire callback based on pickerId
+  if (pickerId === 'dayplan-add-start') _clockState.onConfirm = t => { _dayplanAddState.start = t; _refreshDayplanAddButtons(); };
+  else if (pickerId === 'dayplan-add-end') _clockState.onConfirm = t => { _dayplanAddState.end = t; _refreshDayplanAddButtons(); };
+  openModal('clock-picker-modal');
+  renderClockPicker();
+}
+function clockSetMode(mode) { _clockState.mode = mode; renderClockPicker(); }
+function clockSetAmPm(ampm) { _clockState.ampm = ampm; renderClockPicker(); }
+function clockClear() {
+  if (_clockState.onConfirm) _clockState.onConfirm('');
+  closeModal('clock-picker-modal');
+}
+function clockConfirm() {
+  const s = _clockState;
+  let h24 = s.hour % 12;
+  if (s.ampm === 'pm') h24 += 12;
+  const t = `${String(h24).padStart(2,'0')}:${String(s.minute).padStart(2,'0')}`;
+  if (s.onConfirm) s.onConfirm(t);
+  closeModal('clock-picker-modal');
+}
+function renderClockPicker() {
+  const s = _clockState;
+  const hEl = document.getElementById('clock-part-h');
+  const mEl = document.getElementById('clock-part-m');
+  if (hEl) { hEl.textContent = String(s.hour).padStart(2,'0'); hEl.classList.toggle('active', s.mode==='hour'); }
+  if (mEl) { mEl.textContent = String(s.minute).padStart(2,'0'); mEl.classList.toggle('active', s.mode==='minute'); }
+  const amBtn = document.getElementById('clock-am-btn');
+  const pmBtn = document.getElementById('clock-pm-btn');
+  if (amBtn) amBtn.classList.toggle('active', s.ampm==='am');
+  if (pmBtn) pmBtn.classList.toggle('active', s.ampm==='pm');
+
+  const size = 240, cx = size/2, cy = size/2, r = size/2 - 10;
+  let html = `<svg class="clock-face-svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" id="clock-svg">`;
+  html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="var(--surface2)" stroke="var(--border2)" stroke-width="1.5"/>`;
+  // Ticks
+  for (let i=0;i<60;i++){
+    const a = (i*6 - 90) * Math.PI/180;
+    const x1 = cx + Math.cos(a)*(r-2);
+    const y1 = cy + Math.sin(a)*(r-2);
+    const big = i%5===0;
+    const x2 = cx + Math.cos(a)*(r - (big?10:5));
+    const y2 = cy + Math.sin(a)*(r - (big?10:5));
+    html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--text-lighter)" stroke-width="${big?1.5:0.6}" opacity="${big?0.85:0.5}"/>`;
+  }
+  // Labels
+  const labels = s.mode === 'hour'
+    ? Array.from({length:12},(_,i)=>({val:i===0?12:i, text:String(i===0?12:i)}))
+    : Array.from({length:12},(_,i)=>({val:i*5, text:String(i*5).padStart(2,'0')}));
+  labels.forEach(({val, text}, i) => {
+    const a = (i*30 - 90) * Math.PI/180;
+    const x = cx + Math.cos(a) * (r - 24);
+    const y = cy + Math.sin(a) * (r - 24);
+    const current = s.mode === 'hour' ? s.hour : s.minute;
+    const match = s.mode === 'hour' ? (current === val) : (current === val);
+    html += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="${match?700:500}" fill="${match?'var(--primary)':'var(--text-light)'}" style="pointer-events:none;">${text}</text>`;
+  });
+  // Hands
+  const hourAngle = ((s.hour % 12) * 30 + s.minute * 0.5 - 90) * Math.PI/180;
+  const hx = cx + Math.cos(hourAngle)*(r-55);
+  const hy = cy + Math.sin(hourAngle)*(r-55);
+  html += `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="${s.mode==='hour'?'var(--primary)':'var(--text-lighter)'}" stroke-width="5" stroke-linecap="round" style="pointer-events:none;"/>`;
+  const minAngle = (s.minute * 6 - 90) * Math.PI/180;
+  const mx = cx + Math.cos(minAngle)*(r-20);
+  const my = cy + Math.sin(minAngle)*(r-20);
+  html += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="${s.mode==='minute'?'var(--primary)':'var(--text-lighter)'}" stroke-width="3" stroke-linecap="round" style="pointer-events:none;"/>`;
+  html += `<circle cx="${cx}" cy="${cy}" r="5" fill="var(--primary)" style="pointer-events:none;"/>`;
+  html += `</svg>`;
+  document.getElementById('clock-face').innerHTML = html;
+
+  const svg = document.getElementById('clock-svg');
+  if (!svg) return;
+  const pick = (clientX, clientY) => {
+    const rect = svg.getBoundingClientRect();
+    const px = clientX - rect.left - size/2;
+    const py = clientY - rect.top - size/2;
+    let angle = Math.atan2(py, px) * 180 / Math.PI + 90;
+    if (angle < 0) angle += 360;
+    if (_clockState.mode === 'hour') {
+      let idx = Math.round(angle / 30) % 12;
+      _clockState.hour = idx === 0 ? 12 : idx;
+    } else {
+      _clockState.minute = Math.round(angle / 6) % 60;
+    }
+    renderClockPicker();
+  };
+  const onDown = e => { _clockState.dragging = true; const t = e.touches?e.touches[0]:e; pick(t.clientX, t.clientY); e.preventDefault(); };
+  const onMove = e => { if (!_clockState.dragging) return; const t = e.touches?e.touches[0]:e; pick(t.clientX, t.clientY); e.preventDefault(); };
+  const onUp = () => {
+    if (!_clockState.dragging) return;
+    _clockState.dragging = false;
+    // auto-advance hour → minute after a pick in hour mode
+    if (_clockState.mode === 'hour') { setTimeout(()=>{ _clockState.mode = 'minute'; renderClockPicker(); }, 140); }
+  };
+  svg.onmousedown = onDown;
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('mouseup', onUp);
+  svg.ontouchstart = onDown;
+  svg.ontouchmove = onMove;
+  svg.ontouchend = onUp;
+}
+
+// ── SIDEBAR DRAG REORDER ────────────────────────────────────────────
+function _applySidebarOrder() {
+  if (!D.sidebarOrder || !D.sidebarOrder.length) return;
+  const nav = document.querySelector('.sidebar-nav');
+  if (!nav) return;
+  const items = {};
+  nav.querySelectorAll('.nav-item').forEach(el => items[el.dataset.page] = el);
+  // Remove section headers once a custom order exists (they no longer match)
+  nav.querySelectorAll('.nav-section').forEach(s => s.remove());
+  D.sidebarOrder.forEach(p => { if (items[p]) nav.appendChild(items[p]); });
+  // Append any items that aren't in saved order (new pages added later)
+  Object.values(items).forEach(el => { if (!D.sidebarOrder.includes(el.dataset.page)) nav.appendChild(el); });
+}
+function _initSidebarDrag() {
+  const nav = document.querySelector('.sidebar-nav');
+  if (!nav) return;
+  nav.querySelectorAll('.nav-item').forEach(el => {
+    el.setAttribute('draggable', 'true');
+    el.addEventListener('dragstart', e => {
+      el.classList.add('drag-ghost');
+      e.dataTransfer.effectAllowed = 'move';
+      try { e.dataTransfer.setData('text/plain', el.dataset.page); } catch(_) {}
+    });
+    el.addEventListener('dragend', () => {
+      el.classList.remove('drag-ghost');
+      nav.querySelectorAll('.nav-item').forEach(x => x.classList.remove('drag-over-top','drag-over-bot'));
+    });
+    el.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const rect = el.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height / 2;
+      nav.querySelectorAll('.nav-item').forEach(x => x.classList.remove('drag-over-top','drag-over-bot'));
+      el.classList.add(before ? 'drag-over-top' : 'drag-over-bot');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drag-over-top','drag-over-bot'));
+    el.addEventListener('drop', e => {
+      e.preventDefault();
+      const srcPage = e.dataTransfer.getData('text/plain');
+      nav.querySelectorAll('.nav-item').forEach(x => x.classList.remove('drag-over-top','drag-over-bot'));
+      if (!srcPage || srcPage === el.dataset.page) return;
+      const src = nav.querySelector(`.nav-item[data-page="${srcPage}"]`);
+      if (!src) return;
+      const rect = el.getBoundingClientRect();
+      const before = (e.clientY - rect.top) < rect.height / 2;
+      // Flatten section headers (they don't match custom order well)
+      nav.querySelectorAll('.nav-section').forEach(s => s.remove());
+      if (before) nav.insertBefore(src, el);
+      else nav.insertBefore(src, el.nextSibling);
+      D.sidebarOrder = [...nav.querySelectorAll('.nav-item')].map(x => x.dataset.page);
+      save();
+    });
+  });
+}
+
 function _initManualsWidget() {
   const widget = document.getElementById('dw-manuals');
   if (!widget) return;
@@ -2036,50 +2535,109 @@ function _initManualsWidget() {
   });
 }
 
+let _searchResults = [];
 function _dashSearch(q){
   const dd=document.getElementById('dash-search-dropdown');
   if(!dd)return;
-  if(!q||!q.trim()){dd.style.display='none';return;}
+  if(!q||!q.trim()){dd.style.display='none';_searchResults=[];return;}
   const qLow=q.toLowerCase();
   const results=[];
-  function score(item,type,id,title,date,desc,note,steps){
-    let s=0;
-    if((title||'').toLowerCase().includes(qLow))s+=3;
-    if((steps||[]).some(st=>(st.text||'').toLowerCase().includes(qLow)))s+=2;
-    if([(desc||''),(note||'')].some(f=>f.toLowerCase().includes(qLow)))s+=1;
-    if(s>0)results.push({type,id,title,date,score:s});
-  }
-  (D.dayplan||[]).forEach(p=>score(p,'dayplan',p.id,p.text,p.date,p.desc,p.note,p.steps));
-  (D.tasks||[]).forEach(t=>score(t,'task',t.id,t.title,t.startTime||'',t.desc,t.note,t.steps));
-  (D.records||[]).forEach(r=>{
-    const s=D.students.find(x=>x.id===r.studentId);
-    let sc=0;
-    if((r.content||'').toLowerCase().includes(qLow))sc+=1;
-    if(sc>0)results.push({type:'record',id:r.id,studentId:r.studentId,title:r.content.slice(0,40),date:r.date,score:sc});
+  function hit(s, txt){return (txt||'').toLowerCase().includes(qLow) ? s : 0;}
+
+  (D.dayplan||[]).forEach(p=>{
+    let s = 0;
+    s += hit(3, p.text);
+    if ((p.steps||[]).some(st => (st.text||'').toLowerCase().includes(qLow))) s += 2;
+    s += hit(1, p.desc); s += hit(1, p.note);
+    if (s > 0) results.push({type:'dayplan', id:p.id, title:p.text||'', date:p.date||'', score:s});
   });
+  (D.tasks||[]).forEach(t=>{
+    let s = 0;
+    s += hit(3, t.title);
+    if ((t.steps||[]).some(st => (st.text||'').toLowerCase().includes(qLow))) s += 2;
+    s += hit(1, t.desc); s += hit(1, t.note);
+    if (s > 0) results.push({type:'task', id:t.id, title:t.title||'', date:t.startTime||'', score:s});
+  });
+  (D.records||[]).forEach(r=>{
+    if ((r.content||'').toLowerCase().includes(qLow))
+      results.push({type:'record', id:r.id, studentId:r.studentId, title:(r.content||'').slice(0,60), date:r.date||'', score:1});
+  });
+  (D.memos||[]).forEach(m=>{
+    let s = 0;
+    s += hit(3, m.title); s += hit(1, m.body);
+    if (s > 0) results.push({type:'memo', id:m.id, title:m.title||'Untitled', date:(m.updatedAt||'').slice(0,10), score:s});
+  });
+  (D.routines||[]).forEach(r=>{
+    if ((r.text||'').toLowerCase().includes(qLow))
+      results.push({type:'routine', id:r.id, title:r.text||'', date:'', score:2});
+  });
+  (D.manuals||[]).forEach((m,i)=>{
+    let s = 0;
+    s += hit(3, m.title); s += hit(1, m.url);
+    if (s > 0) results.push({type:'manual', id:String(i), title:m.title||'', date:'', url:m.url||'', score:s});
+  });
+  (D.projects||[]).forEach(pr=>{
+    let s = 0;
+    s += hit(3, pr.title);
+    if (typeof pr.content === 'string') s += hit(1, pr.content);
+    s += hit(1, pr.docNumber);
+    if (s > 0) results.push({type:'project', id:pr.id, title:pr.title||'', date:((pr.dates||[])[0]||''), score:s});
+  });
+  (D.students||[]).forEach(st=>{
+    if ((st.name||'').toLowerCase().includes(qLow))
+      results.push({type:'student', id:st.id, title:st.name||'', date:`${st.grade||''} ${st.classNum||''}`.trim(), score:3});
+  });
+  ((D.progress && D.progress.subjects)||[]).forEach(sub=>{
+    let s = 0;
+    s += hit(2, sub.name);
+    (sub.classes||[]).forEach(c=>{
+      (c.topics||[]).forEach(t=>{ s += hit(1, t.name || t.text); });
+    });
+    if (s > 0) results.push({type:'subject', id:sub.id||sub.name, title:sub.name||'', date:'', score:s});
+  });
+  // Schedule cells (timetable)
+  Object.entries(D.schedule.cells||{}).forEach(([k, v])=>{
+    if (!v || typeof v !== 'object') return;
+    const label = v.subject || v.className || '';
+    if ((label||'').toLowerCase().includes(qLow))
+      results.push({type:'schedule', id:k, title:label, date:k, score:2});
+  });
+
   results.sort((a,b)=>b.score-a.score);
-  const shown=results.slice(0,8);
-  if(!shown.length){dd.style.display='none';return;}
-  const icons={dayplan:'📅',task:'📋',record:'📝'};
-  const labels={dayplan:'일과',task:'작업',record:'기록'};
-  dd.innerHTML=shown.map(r=>`
-    <div onclick="_dashSearchClick('${r.type}','${r.id}'${r.studentId?`,'${r.studentId}'`:''})" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
-      <span style="font-size:16px;">${icons[r.type]||''}</span>
+  _searchResults = results.slice(0, 12);
+  if (!_searchResults.length) { dd.style.display = 'none'; return; }
+
+  const icons = {dayplan:'📅',task:'📋',record:'📝',memo:'🗒️',routine:'🔁',manual:'🔗',project:'📁',student:'👤',subject:'📚',schedule:'🗓️'};
+  const labels = {dayplan:'일과',task:'작업',record:'기록',memo:'노트',routine:'루틴',manual:'메뉴얼',project:'프로젝트',student:'학생',subject:'과목',schedule:'시간표'};
+  dd.innerHTML = _searchResults.map((r,i)=>`
+    <div onclick="_dashSearchClick(${i})" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <span style="font-size:16px;">${icons[r.type]||'•'}</span>
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);">${r.title||''}</div>
-        <div style="font-size:11px;color:var(--text-lighter);">${r.date||''} · ${labels[r.type]||''}</div>
+        <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);">${_escapeHtml(r.title||'')}</div>
+        <div style="font-size:11px;color:var(--text-lighter);">${_escapeHtml(r.date||'')} · ${labels[r.type]||''}</div>
       </div>
     </div>`).join('');
-  dd.style.display='block';
+  dd.style.display = 'block';
 }
-function _dashSearchClick(type,id,studentId){
-  const dd=document.getElementById('dash-search-dropdown');
-  if(dd)dd.style.display='none';
-  const inp=document.getElementById('dash-search-input');
-  if(inp)inp.value='';
-  if(type==='dayplan')editDayplanItem(id);
-  else if(type==='task')editTask(id);
-  else if(type==='record'&&studentId){showStuDetail(studentId);setTimeout(()=>openRecModal&&openRecModal(),100);}
+function _dashSearchClick(idx){
+  const r = _searchResults[idx];
+  if (!r) return;
+  const dd = document.getElementById('dash-search-dropdown'); if (dd) dd.style.display = 'none';
+  const inp = document.getElementById('dash-search-input'); if (inp) inp.value = '';
+  switch (r.type) {
+    case 'dayplan': editDayplanItem(r.id); break;
+    case 'task': editTask(r.id); break;
+    case 'record':
+      if (r.studentId) { showStuDetail(r.studentId); setTimeout(()=>openRecModal&&openRecModal(), 100); }
+      break;
+    case 'memo': showPage('memos'); setTimeout(()=>selectMemo(r.id), 80); break;
+    case 'routine': showPage('dashboard'); break;
+    case 'manual': if (r.url) window.open(r.url, '_blank'); break;
+    case 'project': openProjectDetail(r.id); break;
+    case 'student': showStuDetail(r.id); break;
+    case 'subject': showPage('progress'); break;
+    case 'schedule': showPage('schedule'); break;
+  }
 }
 document.addEventListener('click',function(e){
   const wrap=document.getElementById('dash-search-wrap');
@@ -3961,6 +4519,8 @@ function _startApp() {
   document.getElementById('quick-date').value=todayStr();
   renderDashboard();
   _syncDashSearchWidth();
+  _applySidebarOrder();
+  _initSidebarDrag();
 }
 
 load(); // localStorage 먼저 로드
